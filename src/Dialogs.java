@@ -54,7 +54,7 @@ class WbSortDlg extends Dialogs implements ActionListener {
 	private int sortType = 0;
 	
 	public WbSortDlg(JFrame frame) {
-		super( frame, "문제집 정렬", new Dimension(400, 600) );
+		super( frame, "문제집 정렬", new Dimension(300, 500) );
 		lblTitle.setText("정렬");
 		
 		Container c = getContentPane();
