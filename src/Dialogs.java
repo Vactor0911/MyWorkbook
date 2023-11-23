@@ -15,8 +15,7 @@ public class Dialogs extends JDialog {
 		setTitle(name);
 		setSize(dim.width, dim.height);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setVisible(false);
-		setModal(true);
+		setResizable(false);
 		
 		//대화상자를 화면 정중앙에 위치
 		Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
@@ -51,6 +50,8 @@ class WbSortDlg extends Dialogs implements ActionListener {
 	
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
+	private JButton[] aryBtn = new JButton[6];
+	private int sortType = 0;
 	
 	public WbSortDlg(JFrame frame) {
 		super( frame, "문제집 정렬", new Dimension(400, 600) );
@@ -59,23 +60,29 @@ class WbSortDlg extends Dialogs implements ActionListener {
 		Container c = getContentPane();
 		c.add(pnlCenter, BorderLayout.CENTER);
 		
-		pnlCenter.setLayout( new GridLayout(5, 1, 0 ,0) );
-		for(int i=0; i<5; i++) {
-			JButton btnTemp = new JButton( Integer.toString(i) );
-			btnTemp.setLayout( new BorderLayout() );
-			JPanel pnlTemp = new JPanel();
-			JPanel pnlTemp2 = new JPanel();
-			btnTemp.add(pnlTemp, BorderLayout.NORTH);
-			btnTemp.add(pnlTemp2, BorderLayout.SOUTH);
-			pnlTemp.setBackground(Color.red);
-			pnlTemp2.setBackground(Color.green);
-			pnlCenter.add(btnTemp);
+		pnlCenter.setLayout( new GridLayout(6, 1, 0 ,0) );
+		String[] arySearchList = { "이름순 (오름차순)", "이름순 (내림차순)", "문제 많은순", "문제 적은순",
+				"정답률 높은순", "정답률 낮은순" };
+		for(int i=0; i<arySearchList.length; i++) {
+			aryBtn[i] = new JButton( arySearchList[i] );
+			aryBtn[i].addActionListener(this);
+			pnlCenter.add( aryBtn[i] );
 		}
+		setVisible(true);
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		JButton btn = (JButton)e.getSource();
 		
+		for (int i=0; i<aryBtn.length; i++) {
+			if (btn == aryBtn[i]) {
+				Frame frame = new Frame();
+				frame.sort(i);
+				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
+				break;
+			}
+		}
 	}
 }
 
@@ -91,6 +98,8 @@ class WbAddDlg extends Dialogs implements ActionListener {
 		lblTitle.setText("문제집 추가");
 		
 		Container c = getContentPane();
+		
+		setVisible(true);
 	}
 
 	@Override

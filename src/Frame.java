@@ -1,11 +1,13 @@
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
+import javax.swing.event.*;
 import java.util.ArrayList;
 import javax.swing.border.*;
 
-public class Frame extends JFrame implements ActionListener, MouseListener {
+public class Frame extends JFrame implements ActionListener, MouseListener, KeyListener {
 	private static final long serialVersionUID = 1L;
+	private JFrame frame = this;
 	@SuppressWarnings("unused")
 	private final ImageIcon imageTest = new ImageIcon("images/GridboxPrototypeTexture.jpg");
 	private final ImageIcon imageWorkbook = new ImageIcon("images/Workbook.png");
@@ -33,17 +35,14 @@ public class Frame extends JFrame implements ActionListener, MouseListener {
 	private ImageButton btnSetting = new ImageButton(imageSetting, 80);
 	private JTextField tfSearch = new JTextField(15);
 	
-	private WbSortDlg dlgWbSort = new WbSortDlg(this);
-	private WbAddDlg dlgWbAdd = new WbAddDlg(this);
-	
 	private String strMenu = "";
 	
-	public Frame() {
+	public Frame() { }
+	
+	public Frame(int num) {
 		setTitle("나만의 문제집");
 		setSize(500, 700);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setVisible(true);
 		setMinimumSize( new Dimension(500, 700) );
 		
 		//프레임을 화면 정중앙에 위치
@@ -62,6 +61,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener {
 			imgBtn.addActionListener(this);
 			imgBtn.addMouseListener(this);
 		}
+		
+		//객체 초기화
+		tfSearch.addKeyListener(this);
 		
 		//Gui 그리기
 		c = getContentPane();
@@ -107,6 +109,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener {
 		
 		pnlCenterMain.setLayout( new GridBagLayout() );
 		setMenu("Workbook");
+		setVisible(true);
 	}
 	
 	public static String getFontName() {
@@ -119,6 +122,30 @@ public class Frame extends JFrame implements ActionListener, MouseListener {
 	
 	public static Color getColorBorder() {
 		return COLOR_BORDER;
+	}
+	
+	public void sort(int type) {
+		switch (type) {
+		//TODO 문제집 정렬 기능 추가
+			case 0: //이름순 (오름차순)
+				System.out.println("이름순 (오름차순)");
+				break;
+			case 1: //이름순 (내림차순)
+				System.out.println("이름순 (내림차순)");
+				break;
+			case 2: //문제 많은순
+				System.out.println("문제 많은순");
+				break;
+			case 3: //문제 적은순
+				System.out.println("문제 적은순");
+				break;
+			case 4: //정답률 높은순
+				System.out.println("정답률 높은순");
+				break;
+			default: //정답률 낮은순
+				System.out.println("정답률 낮은순");
+				break;
+		}
 	}
 	
 	class ImageButton extends JButton {
@@ -197,10 +224,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener {
 		//상단 메뉴
 		if (strMenu == "Workbook") {
 			if ( source.equals(btnSort) ) { //정렬
-				dlgWbSort.setVisible(true);
+				new WbSortDlg(frame);
 			}
 			if ( source.equals(btnAddWorkbook) ) {
-				dlgWbAdd.setVisible(true);
+				new WbAddDlg(this);
 			}
 		}
 		
@@ -240,5 +267,17 @@ public class Frame extends JFrame implements ActionListener, MouseListener {
 		c.setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
 		JButton btn = (JButton)e.getComponent();
 		btn.setBorder(null);
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		//TODO 문제집 검색 기능 추가
 	}
 }
