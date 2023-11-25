@@ -1,8 +1,10 @@
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.border.MatteBorder;
+import javax.swing.border.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.event.*;
+import java.io.File;
 
 public class Dialogs extends JDialog {
 	private static final long serialVersionUID = 1L;
@@ -10,30 +12,31 @@ public class Dialogs extends JDialog {
 	private JPanel pnlNorth = new JPanel();
 	private JLabel lblTitle = new JLabel("", SwingConstants.CENTER);
 	
-	public Dialogs(JFrame frame, String name, Dimension dim) {
+	public Dialogs(JFrame frame, String name, int width, int height) {
 		super(frame, "", true);
 		setTitle(name);
-		setSize(dim.width, dim.height);
+		setSize(width, height);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setResizable(false);
 		
 		//대화상자를 화면 정중앙에 위치
 		Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
-		int x = res.width / 2 - dim.width / 2;
-		int y = res.height / 2 - dim.height / 2;
+		int x = res.width / 2 - width / 2;
+		int y = res.height / 2 - height / 2;
 		setLocation(x, y);
 		
 		Container c = getContentPane();
+		c.setLayout( new BorderLayout() );
 		
 		c.add(pnlNorth, BorderLayout.NORTH);
 		pnlNorth.setLayout( new FlowLayout(FlowLayout.CENTER, 0, 5) );
 		pnlNorth.setBackground( Frame.getColor() );
-		pnlNorth.setBorder( new MatteBorder( 0,0,2,0,Frame.getColorBorder() ) );
+		pnlNorth.setBorder( new MatteBorder( 0, 0, 2, 0, Frame.getColorBorder() ) );
 		pnlNorth.setPreferredSize( new Dimension(0, 50) );
 		pnlNorth.add(lblTitle);
 		
 		lblTitle.setFont( new Font(Frame.getFontName(), Font.BOLD, 26) );
-	}
+	} //생성자
 	
 	public JPanel getPanel() {
 		return pnlNorth;
@@ -42,7 +45,7 @@ public class Dialogs extends JDialog {
 	public JLabel getLabel() {
 		return lblTitle;
 	}
-}
+}//Dialogs 클래스
 
 //문제집 - [정렬]
 class WbSortDlg extends Dialogs implements ActionListener {
@@ -53,7 +56,7 @@ class WbSortDlg extends Dialogs implements ActionListener {
 	private JButton[] aryBtn = new JButton[6];
 	
 	public WbSortDlg(JFrame frame) {
-		super( frame, "문제집 정렬", new Dimension(400, 600) );
+		super(frame, "문제집 정렬", 400, 600);
 		lblTitle.setText("정렬");
 		
 		Container c = getContentPane();
@@ -67,8 +70,9 @@ class WbSortDlg extends Dialogs implements ActionListener {
 			aryBtn[i].addActionListener(this);
 			pnlCenter.add( aryBtn[i] );
 		}
+		
 		setVisible(true);
-	}
+	} //생성자
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -82,8 +86,8 @@ class WbSortDlg extends Dialogs implements ActionListener {
 				break;
 			}
 		}
-	}
-}
+	} //actionPerformed()
+} //WbSortDlg 클래스
 
 //문제집 - [문제집 추가]
 class WbAddDlg extends Dialogs implements ActionListener {
@@ -91,18 +95,239 @@ class WbAddDlg extends Dialogs implements ActionListener {
 	
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
-		
+	private JPanel pnlNew = new JPanel();
+	private JPanel pnlLoad = new JPanel();
+	private JPanel pnlNewCenter = new JPanel();
+	private JLabel lblNew = new JLabel("새로 만들기");
+	private JLabel lblNewTitle = new JLabel("제목");
+	private JHintTextField tfNewTitle = new JHintTextField("  제목을 입력하세요");
+	private JLabel lblNewColor = new JLabel("색상");
+	private JColorComboBox cbColor = new JColorComboBox();
+	private JButton btnNewOk = new JButton("문제집 만들기");
+	private JLabel lblLoad = new JLabel("불러오기");
+	private JButton btnLoad = new JButton("파일 가져오기");
+	
 	public WbAddDlg(JFrame frame) {
-		super( frame, "문제집 추가", new Dimension(400, 600) );
+		super(frame, "문제집 추가", 300, 400);
 		lblTitle.setText("문제집 추가");
 		
 		Container c = getContentPane();
+		c.add(pnlCenter, BorderLayout.CENTER);
+		pnlCenter.setLayout( new BoxLayout(pnlCenter, BoxLayout.Y_AXIS) );
+		pnlCenter.add(pnlNew);
+		
+		//North
+		pnlNew.setPreferredSize( new Dimension(0, 255) );
+		pnlNew.setLayout( new BorderLayout() );
+		pnlNew.setBorder( BorderFactory.createEmptyBorder(10, 10, 0, 10) );
+		
+		lblNew.setFont( new Font(Frame.getFontName(), Font.BOLD, 15) );
+		lblNew.setForeground( Frame.getColorFont() );
+		pnlNew.add(lblNew, BorderLayout.NORTH);
+		
+		pnlNew.add(pnlNewCenter, BorderLayout.CENTER);
+		pnlNewCenter.setLayout(null);
+		
+		lblNewTitle.setFont( new Font(Frame.getFontName(), Font.PLAIN, 13) );
+		lblNewTitle.setSize(100, 20);
+		lblNewTitle.setLocation(0, 5);
+		pnlNewCenter.add(lblNewTitle);
+		
+		tfNewTitle.setSize(264, 30);
+		tfNewTitle.setLocation(0, 30);
+		pnlNewCenter.add(tfNewTitle);
+		
+		lblNewColor.setFont( new Font(Frame.getFontName(), Font.PLAIN, 13) );
+		lblNewColor.setSize(100, 20);
+		lblNewColor.setLocation(0, 70);
+		pnlNewCenter.add(lblNewColor);
+		
+		cbColor.setSize(264, 30);
+		cbColor.setLocation(0, 95);
+		pnlNewCenter.add(cbColor);
+		
+		btnNewOk.setSize(180, 35);
+		btnNewOk.setLocation(42, 140);
+		btnNewOk.setBackground( Frame.getColor() );
+		btnNewOk.setBorder( new MatteBorder( 2, 2, 2, 2, Frame.getColorBorder() ) );
+		pnlNewCenter.add(btnNewOk);
+		btnNewOk.addActionListener(this);
+		
+		//Center Border
+		pnlNewCenter.setBorder( new MatteBorder( 0, 0, 2, 0, Frame.getColorBorder() ) );
+		
+		//South
+		pnlCenter.add(pnlLoad);
+		pnlLoad.setLayout( new BorderLayout() );
+		pnlLoad.setBorder( BorderFactory.createEmptyBorder(10, 10, 10, 10) );
+		pnlLoad.setPreferredSize( new Dimension(0, 95) );
+		
+		lblLoad.setFont( new Font(Frame.getFontName(), Font.BOLD, 15) );
+		lblLoad.setForeground( Frame.getColorFont() );
+		pnlLoad.add(lblLoad, BorderLayout.NORTH);
+		
+		JPanel pnlTemp = new JPanel();
+		pnlTemp.setLayout(null);
+		pnlLoad.add(pnlTemp, BorderLayout.CENTER);
+		
+		btnLoad.setSize(180, 35);
+		btnLoad.setLocation(42, 5);
+		btnLoad.setBackground( Frame.getColor() );
+		btnLoad.setBorder( new MatteBorder( 2, 2, 2, 2, Frame.getColorBorder() ) );
+		pnlTemp.add(btnLoad);
+		btnLoad.addActionListener(this);
 		
 		setVisible(true);
-	}
+	} //생성자
+	
+	class JColorComboBox extends JComboBox<Color> {
+		private static final long serialVersionUID = 1L;
+		private Color[] aryColor = {
+			new Color(244, 153, 192),
+			new Color(247, 148, 30),
+			new Color(255, 247, 154),
+			new Color(171, 211, 116),
+			new Color(109, 207, 246),
+		};
 
+		@SuppressWarnings("unchecked")
+		public JColorComboBox() {
+			super();
+			DefaultComboBoxModel<Color> model = new DefaultComboBoxModel<Color>();
+			
+			for (Color color : aryColor) {
+				model.addElement(color);
+			}
+			setModel(model);
+			setRenderer( new ColorRenderer() );
+			this.setOpaque(true);
+			this.setSelectedIndex(0);
+		} //생성자
+		
+		@Override
+		public void setSelectedItem(Object object) {
+			super.setSelectedItem(object);
+			setBackground( (Color)object );
+		}
+		
+		@SuppressWarnings("rawtypes")
+		class ColorRenderer extends JLabel implements ListCellRenderer {
+			private static final long serialVersionUID = 1L;
+			public ColorRenderer() {
+				this.setOpaque(true);
+				this.setPreferredSize( new Dimension(0, 30) );
+			}
+			
+			@Override
+			public Component getListCellRendererComponent(JList list, Object value,
+					int index, boolean isSelected, boolean cellHasFocus) {
+				setBackground( (Color)value );
+				setText(" ");
+				return this;
+			}
+		} //ColorRenderer
+		
+		public Color getColor() {
+			return aryColor[ getSelectedIndex() ];
+		}
+	}
+	
+	class JHintTextField extends JTextField implements FocusListener {
+		private static final long serialVersionUID = 1L;
+		private String hint;
+		private boolean flagHint = true;
+		private boolean flagWarn = false;
+		
+		public JHintTextField(String hint) {
+			super(hint);
+		    this.hint = hint;
+		    super.setBorder( BorderFactory.createLineBorder( Frame.getColorBorder() ) );
+		    super.setForeground(Color.BLACK);
+		    super.addFocusListener(this);
+		} //생성자
+
+		@Override
+		public void focusGained(FocusEvent e) {
+			if( this.getText().isEmpty() ) {
+				super.setText("");
+				if (!flagWarn) {
+					super.setBorder( BorderFactory.createLineBorder( Frame.getColorBorder() ) );
+					super.setForeground(Color.BLACK);
+				}
+				flagHint = false;
+		    }
+		} //focusGained()
+
+		@Override
+		public void focusLost(FocusEvent e) {
+			if( this.getText().isEmpty() ) {
+			    super.setText(hint);
+			    if (!flagWarn) {
+			    	super.setBorder( BorderFactory.createLineBorder( Frame.getColorBorder() ) );
+				    super.setForeground(Color.GRAY);
+			    }
+			    flagHint = true;
+			    return;
+		    }
+			else if(flagWarn) {
+				flagWarn = false;
+				super.setBorder( BorderFactory.createLineBorder( Frame.getColorBorder() ) );
+			    super.setForeground(Color.BLACK);
+			}
+		} //focusLost()
+		
+		@Override
+		public String getText() {
+			if (flagHint) {
+				return "";
+			}
+			else {
+				return super.getText();
+			}
+		}
+		
+		//공백 경고
+		public void warn() {
+			flagWarn = true;
+			super.setForeground(Color.RED);
+			super.setBorder( BorderFactory.createLineBorder(Color.RED) );
+		}
+	}
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		
-	}
-}
+		if (e.getSource() == btnNewOk) {
+			if ( tfNewTitle.getText().isEmpty() ) { //문제집 제목이 공백일 경우
+				tfNewTitle.warn();
+			}
+			else {
+				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
+				System.out.println( tfNewTitle.getText() );
+				System.out.println( cbColor.getColor() );
+				//TODO 문제집 파일 생성
+			}
+		}
+		else if (e.getSource() == btnLoad) {
+			JFileChooser jfc = new JFileChooser();
+			jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			jfc.setAcceptAllFileFilterUsed(false);
+			jfc.setFileHidingEnabled(true);
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("문제집 파일 (*.workbook)",
+					"workbook");
+			jfc.setFileFilter(filter);
+			
+			int result = jfc.showOpenDialog(null); //파일 선택기 열기
+			
+			if (result == JFileChooser.APPROVE_OPTION) { //파일이 정상적으로 선택됨
+				File dir = jfc.getSelectedFile();
+				System.out.println(dir); //파일 경로 출력
+				//TODO 파일 가져오기 & 문제집 메뉴 메인 리스트 초기화
+				
+				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
+			}
+			else { //파일 선택 에러
+				System.out.println("파일 선택 안됨");
+			}
+		}
+	} //actionPerformed()
+} //WbAddDlg 클래스

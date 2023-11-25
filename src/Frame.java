@@ -1,9 +1,9 @@
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
-import javax.swing.event.*;
 import java.util.ArrayList;
 import javax.swing.border.*;
+import java.io.*;
 
 public class Frame extends JFrame implements ActionListener, MouseListener, KeyListener {
 	private static final long serialVersionUID = 1L;
@@ -17,8 +17,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	private final ImageIcon imageSort = new ImageIcon("images/Sort.png");
 	private final ImageIcon imageAddWorkbook = new ImageIcon("images/AddWorkbook.png");
 	private final static String FONT = "맑은 고딕";
-	private final static Color COLOR = Color.lightGray;
-	private final static Color COLOR_BORDER = Color.gray;
+	private final static Color COLOR = Color.LIGHT_GRAY;
+	private final static Color COLOR_BORDER = Color.GRAY;
+	private final static Color COLOR_FONT = Color.GRAY;
 	
 	private Container c;
 	private JPanel pnlNorth = new JPanel();
@@ -65,13 +66,31 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		//객체 초기화
 		tfSearch.addKeyListener(this);
 		
+		//파일 경로 초기화
+		String separator = File.separator;
+    	String userHome = System.getProperty("user.home");
+    	String folderPath = userHome + separator + "Documents" + separator + "MyWorkbook";
+    	File f = new File(folderPath);
+    	if( !f.exists() ) {
+    		f.mkdirs();
+    	}
+    	
+    	String[] aryFolder = { "Workbooks", "ReviewNotes" };
+    	for (String k : aryFolder) {
+    		String path = folderPath + separator + k;
+    		File fTemp = new File(path);
+    		if ( !fTemp.exists() ) {
+    			fTemp.mkdirs();
+    		}
+    	}
+		
 		//Gui 그리기
 		c = getContentPane();
 		c.setLayout( new BorderLayout() );
 		c.add(pnlNorth, BorderLayout.NORTH);
 		
 		pnlNorth.setBackground(COLOR);
-		pnlNorth.setBorder( new MatteBorder(0,0,2,0,Color.gray) );
+		pnlNorth.setBorder( new MatteBorder( 0, 0, 2, 0, COLOR_BORDER ) );
 		pnlNorth.setPreferredSize( new Dimension(0, 70) );
 		pnlNorth.setLayout( new BorderLayout() );
 		
@@ -110,6 +129,8 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		pnlCenterMain.setLayout( new GridBagLayout() );
 		setMenu("Workbook");
 		setVisible(true);
+		
+		
 	}
 	
 	public static String getFontName() {
@@ -122,6 +143,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	
 	public static Color getColorBorder() {
 		return COLOR_BORDER;
+	}
+	
+	public static Color getColorFont() {
+		return COLOR_FONT;
 	}
 	
 	public void sort(int type) {
@@ -279,5 +304,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	@Override
 	public void keyReleased(KeyEvent e) {
 		//TODO 문제집 검색 기능 추가
+		System.out.println( tfSearch.getText() );
 	}
 }
