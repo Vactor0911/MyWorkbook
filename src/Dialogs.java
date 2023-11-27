@@ -4,13 +4,9 @@ import javax.swing.border.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.event.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
+import java.util.Dictionary;
+import java.util.Hashtable;
 
 public class Dialogs extends JDialog {
 	private static final long serialVersionUID = 1L;
@@ -44,6 +40,8 @@ public class Dialogs extends JDialog {
 		lblTitle.setFont( new Font(Frame.getFontName(), Font.BOLD, 26) );
 	} //생성자
 	
+	
+	//getter
 	public JPanel getPanel() {
 		return pnlNorth;
 	}
@@ -52,6 +50,16 @@ public class Dialogs extends JDialog {
 		return lblTitle;
 	}
 }//Dialogs 클래스
+
+
+class MessaegBox extends JDialog {
+	private static final long serialVersionUID = 1L;
+	
+	private JLabel lblText = new JLabel();
+	private JButton btnOk = new JButton("확인");
+	private JButton btnCancel = new JButton("취소");
+} //MessageBox 클래스
+
 
 //문제집 - [정렬]
 class WbSortDlg extends Dialogs implements ActionListener {
@@ -96,6 +104,7 @@ class WbSortDlg extends Dialogs implements ActionListener {
 	} //actionPerformed()
 } //WbSortDlg 클래스
 
+
 //문제집 - [문제집 추가]
 class WbAddDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
@@ -114,8 +123,11 @@ class WbAddDlg extends Dialogs implements ActionListener {
 	private JLabel lblLoad = new JLabel("불러오기");
 	private JButton btnLoad = new JButton("파일 가져오기");
 	
+	private Frame frame;
+	
 	public WbAddDlg(Frame frame) {
 		super(frame, "문제집 추가", 300, 400);
+		this.frame = frame;
 		lblTitle.setText("문제집 추가");
 		
 		Container c = getContentPane();
@@ -187,6 +199,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 		setVisible(true);
 	} //생성자
 	
+	
 	class JColorComboBox extends JComboBox<Color> {
 		private static final long serialVersionUID = 1L;
 		private Color[] aryColor = {
@@ -238,6 +251,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 			return aryColor[ getSelectedIndex() ];
 		}
 	} //JColorComboBox 클래스
+	
 	
 	class JHintTextField extends JTextField implements FocusListener {
 		private static final long serialVersionUID = 1L;
@@ -301,74 +315,31 @@ class WbAddDlg extends Dialogs implements ActionListener {
 		}
 	} //JHintTextField 클래스
 	
-	class DataObject implements Serializable {
-		private static final long serialVersionUID = 1L;
-		@SuppressWarnings("unused")
-	    private String stringValue;
-		@SuppressWarnings("unused")
-	    private int intValue;
-	    // 다른 필드들도 추가할 수 있음
-
-	    // 생성자, getter, setter 등 필요한 메서드들을 추가
-
-	    //파일 저장하기
-	    public void saveFile(String fileName, int[] array) {
-	        try (FileOutputStream fileOut = new FileOutputStream(fileName);
-	             ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
-	            objectOut.writeObject(array); // 객체를 파일에 씀
-	            System.out.println("객체가 파일에 저장되었습니다.");
-	        }
-	        catch (IOException e) {
-	            e.printStackTrace();
-	        }
-	    }
-
-	    //파일 읽기
-	    public int[] readFile(String fileName) {
-	    	int[] dataObject = null;
-	        try (FileInputStream fileIn = new FileInputStream(fileName);
-	             ObjectInputStream objectIn = new ObjectInputStream(fileIn)) {
-	            dataObject = (int[])objectIn.readObject(); // 파일에서 객체를 읽어옴
-	            System.out.println("객체가 파일에서 읽혔습니다.");
-	        }
-	        catch (IOException | ClassNotFoundException e) {
-	            e.printStackTrace();
-	        }
-	        return dataObject;
-	    }
-	} //DataObject 클래스
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == btnNewOk) {
-			if ( tfNewTitle.getText().isEmpty() ) { //문제집 제목이 공백일 경우
+		if (e.getSource() == btnNewOk) { //저장
+			//문제집 제목이 공백일 경우
+			if ( tfNewTitle.getText().isEmpty() ) {
 				tfNewTitle.warn();
+				return;
 			}
-			else {
-				String fileName = tfNewTitle.getText();
-				Color fileColor = cbColor.getColor();
-				System.out.println(fileName);
-				System.out.println(fileColor);
-				
-				//TODO 문제집 파일 생성
-				String separator = File.separator;
-		    	String userHome = System.getProperty("user.home");
-		    	String folderPath = userHome + separator + "Documents" + separator +
-		    			"MyWorkbook" + separator + "Workbooks";
-		    	String filePath = folderPath + separator + fileName + ".workbook";
-		    	File f = new File(filePath);
-		    	if ( f.exists() ) {
-		    		System.out.println("파일 이미 있음!");
-		    	}
-		    	else {
-		    		DataObject ob = new DataObject();
-		        	ob.saveFile( filePath, new int[10] );
-		    	}
-		    	
-		    	this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
-			}
+			
+			String fileName = tfNewTitle.getText();
+			Color fileColor = cbColor.getColor();
+			
+			//파일 새로 생성
+			String separator = File.separator;
+	    	String folderPath = Frame.getFolderPath() + separator + "Workbooks";
+	    	String filePath = folderPath + separator + fileName + ".workbook";
+	    	
+    		Workbook wb = new Workbook(fileName, fileColor);
+    		FileIO ob = new FileIO();
+        	ob.saveFile(filePath, wb);
+	    	
+	    	this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 		}
-		else if (e.getSource() == btnLoad) {
+		else if (e.getSource() == btnLoad) { //불러오기
 			JFileChooser jfc = new JFileChooser();
 			jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			jfc.setAcceptAllFileFilterUsed(false);
@@ -380,11 +351,23 @@ class WbAddDlg extends Dialogs implements ActionListener {
 			int result = jfc.showOpenDialog(null); //파일 선택기 열기
 			
 			if (result == JFileChooser.APPROVE_OPTION) { //파일이 정상적으로 선택됨
-				File dir = jfc.getSelectedFile();
-				System.out.println(dir); //파일 경로 출력
-				//TODO 파일 가져오기 & 문제집 메뉴 메인 리스트 초기화
+				String filePath = jfc.getSelectedFile().toString();
+				File file = new File(filePath);
+				String fileName = file.getName().split("\\.")[0];
 				
-				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
+				//TODO 파일 가져오기 & 문제집 메뉴 메인 리스트 초기화
+				//파일 불러오기
+				FileIO ob = new FileIO();
+				Workbook wb = ob.loadFile(filePath);
+				
+				//불러온 파일 Workbooks 폴더에 복사
+				String separator = File.separator;
+		    	String folderPath = Frame.getFolderPath() + separator + "Workbooks";
+		    	filePath = folderPath + separator + fileName + ".workbook";
+				ob.saveFile(filePath, wb);
+				
+				frame.sort();
+				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 			}
 			else { //파일 선택 에러
 				System.out.println("파일 선택 안됨");

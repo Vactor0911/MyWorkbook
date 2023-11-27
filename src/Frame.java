@@ -19,6 +19,8 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	private final static Color COLOR = Color.LIGHT_GRAY;
 	private final static Color COLOR_BORDER = Color.GRAY;
 	private final static Color COLOR_FONT = Color.GRAY;
+	private final static String FOLDER_PATH = System.getProperty("user.home") +
+			File.separator + "Documents" + File.separator + "MyWorkbook";
 	
 	private Container c;
 	private JPanel pnlNorth = new JPanel();
@@ -37,9 +39,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	
 	private String strMenu = "";
 	
-	public Frame() { }
-	
-	public Frame(int num) {
+	public Frame() {
 		setTitle("나만의 문제집");
 		setSize(500, 700);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -67,16 +67,15 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		
 		//파일 경로 초기화
 		String separator = File.separator;
-    	String userHome = System.getProperty("user.home");
-    	String folderPath = userHome + separator + "Documents" + separator + "MyWorkbook";
-    	File f = new File(folderPath);
+    	
+    	File f = new File(FOLDER_PATH);
     	if( !f.exists() ) {
     		f.mkdirs();
     	}
     	
     	String[] aryFolder = { "Workbooks", "ReviewNotes" };
     	for (String k : aryFolder) {
-    		String path = folderPath + separator + k;
+    		String path = FOLDER_PATH + separator + k;
     		File fTemp = new File(path);
     		if ( !fTemp.exists() ) {
     			fTemp.mkdirs();
@@ -130,8 +129,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		setVisible(true);
 		
 		
-	}
+	} //생성자
 	
+	
+	//getter
 	public static String getFontName() {
 		return FONT;
 	}
@@ -148,6 +149,15 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		return COLOR_FONT;
 	}
 	
+	public static String getFolderPath() {
+		return FOLDER_PATH;
+	}
+	
+	/**
+	 * [문제집] 메뉴에서 표시되는 문제집 목록을 정렬한다.
+	 * @param type - 정렬 종류 [ 0 : 이름순 (오름차순), 1 : 이름순 (내림차순), 2 : 문제 많은순,
+	 * 3 : 문제 적은순, 4 : 정답률 높은순, 5 : 정답률 낮은순 ]
+	*/
 	public void sort(int type) {
 		switch (type) {
 		//TODO 문제집 정렬 기능 추가
@@ -170,7 +180,12 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				System.out.println("정답률 낮은순");
 				break;
 		}
-	}
+	} //sort()
+	
+	public void sort() {
+		this.sort(0);
+	} //sort()
+	
 	
 	class ImageButton extends JButton {
 		private static final long serialVersionUID = 1L;
@@ -192,8 +207,14 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			super.paintComponent(g);
 			g.drawImage(image.getImage(), 0, 0, size, size, this);
 		}
-	}
+	} //ImageButton 클래스
 	
+	
+	/**
+	 * Frame 객체에서 표시할 메뉴를 설정한다.
+	 * @param menu - 화면에 표시할 메뉴의 이름; [ Workbook : 문제집, Review : 오답노트, History : 기록,
+	 * Setting : 설정 ]
+	*/
 	public void setMenu(String menu) {
 		ArrayList<ImageButton> listImageButton = new ArrayList<ImageButton>();
 		
@@ -232,7 +253,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			default:
 				lblMenuName.setText(" 설정");
 				break;
-		}
+		} //switch()
 		
 		for (ImageButton k : listImageButton) {
 			pnlNorthEast.add(k);
@@ -240,8 +261,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		
 		c.repaint();
 		strMenu = menu;
-	}
-
+	} //setMenu()
+	
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
@@ -268,8 +290,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		if ( source.equals(btnSetting) ) {
 			setMenu("Setting");
 		}
-	}
+	} //actionPerformed()
 
+	
 	@Override
 	public void mouseClicked(MouseEvent e) { }
 
@@ -293,6 +316,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		btn.setBorder(null);
 	}
 
+	
 	@Override
 	public void keyTyped(KeyEvent e) {}
 
@@ -315,6 +339,5 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				//TODO 문제집 검색 기능 추가
 				break;
 		}
-		
 	}
-}
+} //Frame 클래스
