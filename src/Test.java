@@ -5,7 +5,6 @@ class TestFrame extends JFrame {
 	private static final long serialVersionUID = 1L;
 
 	public TestFrame() {
-		new WbAddDlg(this);
 	}
 	
 }

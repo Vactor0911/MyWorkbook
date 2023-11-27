@@ -7,7 +7,6 @@ import java.io.*;
 
 public class Frame extends JFrame implements ActionListener, MouseListener, KeyListener {
 	private static final long serialVersionUID = 1L;
-	private JFrame frame = this;
 	@SuppressWarnings("unused")
 	private final ImageIcon imageTest = new ImageIcon("images/GridboxPrototypeTexture.jpg");
 	private final ImageIcon imageWorkbook = new ImageIcon("images/Workbook.png");
@@ -249,7 +248,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		//상단 메뉴
 		if (strMenu == "Workbook") {
 			if ( source.equals(btnSort) ) { //정렬
-				new WbSortDlg(frame);
+				new WbSortDlg(this);
 			}
 			if ( source.equals(btnAddWorkbook) ) {
 				new WbAddDlg(this);
@@ -303,7 +302,19 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		//TODO 문제집 검색 기능 추가
-		System.out.println( tfSearch.getText() );
+		int key = e.getKeyCode();
+		switch (key) {
+			case KeyEvent.VK_ESCAPE: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
+			case KeyEvent.VK_WINDOWS: case KeyEvent.VK_TAB: case KeyEvent.VK_CAPS_LOCK:
+			case KeyEvent.VK_NUM_LOCK: case KeyEvent.VK_SCROLL_LOCK: case KeyEvent.VK_INSERT:
+			case KeyEvent.VK_HOME: case KeyEvent.VK_END: case KeyEvent.VK_PAGE_UP:
+			case KeyEvent.VK_PAGE_DOWN: case KeyEvent.VK_CONTEXT_MENU:
+				break;
+			default:
+				System.out.println( tfSearch.getText() );
+				//TODO 문제집 검색 기능 추가
+				break;
+		}
+		
 	}
 }

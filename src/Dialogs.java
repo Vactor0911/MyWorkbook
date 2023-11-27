@@ -5,6 +5,12 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.event.*;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 public class Dialogs extends JDialog {
 	private static final long serialVersionUID = 1L;
@@ -12,7 +18,7 @@ public class Dialogs extends JDialog {
 	private JPanel pnlNorth = new JPanel();
 	private JLabel lblTitle = new JLabel("", SwingConstants.CENTER);
 	
-	public Dialogs(JFrame frame, String name, int width, int height) {
+	public Dialogs(Frame frame, String name, int width, int height) {
 		super(frame, "", true);
 		setTitle(name);
 		setSize(width, height);
@@ -51,12 +57,14 @@ public class Dialogs extends JDialog {
 class WbSortDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	
+	private Frame frame;
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
 	private JButton[] aryBtn = new JButton[6];
 	
-	public WbSortDlg(JFrame frame) {
+	public WbSortDlg(Frame frame) {
 		super(frame, "문제집 정렬", 400, 600);
+		this.frame = frame;
 		lblTitle.setText("정렬");
 		
 		Container c = getContentPane();
@@ -80,7 +88,6 @@ class WbSortDlg extends Dialogs implements ActionListener {
 		
 		for (int i=0; i<aryBtn.length; i++) {
 			if (btn == aryBtn[i]) {
-				Frame frame = new Frame();
 				frame.sort(i);
 				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
 				break;
@@ -107,7 +114,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 	private JLabel lblLoad = new JLabel("불러오기");
 	private JButton btnLoad = new JButton("파일 가져오기");
 	
-	public WbAddDlg(JFrame frame) {
+	public WbAddDlg(Frame frame) {
 		super(frame, "문제집 추가", 300, 400);
 		lblTitle.setText("문제집 추가");
 		
@@ -225,12 +232,12 @@ class WbAddDlg extends Dialogs implements ActionListener {
 				setText(" ");
 				return this;
 			}
-		} //ColorRenderer
+		} //ColorRenderer 클래스
 		
 		public Color getColor() {
 			return aryColor[ getSelectedIndex() ];
 		}
-	}
+	} //JColorComboBox 클래스
 	
 	class JHintTextField extends JTextField implements FocusListener {
 		private static final long serialVersionUID = 1L;
@@ -292,7 +299,44 @@ class WbAddDlg extends Dialogs implements ActionListener {
 			super.setForeground(Color.RED);
 			super.setBorder( BorderFactory.createLineBorder(Color.RED) );
 		}
-	}
+	} //JHintTextField 클래스
+	
+	class DataObject implements Serializable {
+		private static final long serialVersionUID = 1L;
+		@SuppressWarnings("unused")
+	    private String stringValue;
+		@SuppressWarnings("unused")
+	    private int intValue;
+	    // 다른 필드들도 추가할 수 있음
+
+	    // 생성자, getter, setter 등 필요한 메서드들을 추가
+
+	    //파일 저장하기
+	    public void saveFile(String fileName, int[] array) {
+	        try (FileOutputStream fileOut = new FileOutputStream(fileName);
+	             ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
+	            objectOut.writeObject(array); // 객체를 파일에 씀
+	            System.out.println("객체가 파일에 저장되었습니다.");
+	        }
+	        catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    //파일 읽기
+	    public int[] readFile(String fileName) {
+	    	int[] dataObject = null;
+	        try (FileInputStream fileIn = new FileInputStream(fileName);
+	             ObjectInputStream objectIn = new ObjectInputStream(fileIn)) {
+	            dataObject = (int[])objectIn.readObject(); // 파일에서 객체를 읽어옴
+	            System.out.println("객체가 파일에서 읽혔습니다.");
+	        }
+	        catch (IOException | ClassNotFoundException e) {
+	            e.printStackTrace();
+	        }
+	        return dataObject;
+	    }
+	} //DataObject 클래스
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -301,10 +345,27 @@ class WbAddDlg extends Dialogs implements ActionListener {
 				tfNewTitle.warn();
 			}
 			else {
-				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
-				System.out.println( tfNewTitle.getText() );
-				System.out.println( cbColor.getColor() );
+				String fileName = tfNewTitle.getText();
+				Color fileColor = cbColor.getColor();
+				System.out.println(fileName);
+				System.out.println(fileColor);
+				
 				//TODO 문제집 파일 생성
+				String separator = File.separator;
+		    	String userHome = System.getProperty("user.home");
+		    	String folderPath = userHome + separator + "Documents" + separator +
+		    			"MyWorkbook" + separator + "Workbooks";
+		    	String filePath = folderPath + separator + fileName + ".workbook";
+		    	File f = new File(filePath);
+		    	if ( f.exists() ) {
+		    		System.out.println("파일 이미 있음!");
+		    	}
+		    	else {
+		    		DataObject ob = new DataObject();
+		        	ob.saveFile( filePath, new int[10] );
+		    	}
+		    	
+		    	this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
 			}
 		}
 		else if (e.getSource() == btnLoad) {
