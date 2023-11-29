@@ -1,14 +1,18 @@
 import java.awt.Color;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.ImageProducer;
+import java.awt.image.RGBImageFilter;
 import java.io.*;
-import java.util.Dictionary;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 class Workbook implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	private String name = "";
 	private Color color = null;
-	private Dictionary<String, Object> dictQ = new Hashtable<String, Object>();
+	private HashMap<String, Object> hashMapQ = new HashMap<String, Object>();
 	
 	public Workbook(String name, Color color) {
 		this.name = name;
@@ -23,8 +27,8 @@ class Workbook implements Serializable {
 		return color;
 	}
 	
-	public Dictionary<String, Object> getDictionary() {
-		return dictQ;
+	public HashMap<String, Object> getHashMap() {
+		return hashMapQ;
 	}
 	
 	@Override
@@ -34,7 +38,7 @@ class Workbook implements Serializable {
         buffer.append("\n");
         buffer.append(color);
         buffer.append("\n");
-        buffer.append(dictQ);
+        buffer.append(hashMapQ);
         buffer.append("\n");
         return buffer.toString();
     }
@@ -94,7 +98,38 @@ class FileIO implements Serializable {
         }
         catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+            //TODO 파일 불러오기 오류 메시지 팝업
         }
         return wb;
     }
 } //DataObject 클래스
+
+
+class ColorizeFilter extends RGBImageFilter implements Serializable {
+	private static final long serialVersionUID = 1L;
+    private int color;
+
+    public ColorizeFilter(int color) {
+        this.color = color;
+        canFilterIndexColorModel = true;
+    }
+    
+    public static Image colorizeImg(Image img, Color color) {
+		//RGBImageFilter 필터를 생성
+		RGBImageFilter filter = new ColorizeFilter( color.getRGB() );
+		//FilteredImageSource를 통해 필터 적용
+		ImageProducer producer = new FilteredImageSource(img.getSource(), filter);
+		//필터를 적용한 이미지 생성
+		Image coloredImg = Toolkit.getDefaultToolkit().createImage(producer);
+		return coloredImg;
+	}
+
+    @Override
+    public int filterRGB(int x, int y, int rgb) {
+        int alpha = (rgb >> 24) & 0xFF;
+        int red = (color >> 16) & 0xFF;
+        int green = (color >> 8) & 0xFF;
+        int blue = color & 0xFF;
+        return (alpha << 24) | (red << 16) | (green << 8) | blue;
+    }
+} //ColorizeFilter 클래스
