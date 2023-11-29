@@ -2,6 +2,9 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+
 import javax.swing.border.*;
 import java.io.*;
 
@@ -19,6 +22,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	private final static Color COLOR = Color.LIGHT_GRAY;
 	private final static Color COLOR_BORDER = Color.GRAY;
 	private final static Color COLOR_FONT = Color.GRAY;
+	private final static String SEPARATOR = File.separator;
 	private final static String FOLDER_PATH = System.getProperty("user.home") +
 			File.separator + "Documents" + File.separator + "MyWorkbook";
 	
@@ -36,8 +40,14 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	private ImageButton btnHistory = new ImageButton(imageHistory, 80);
 	private ImageButton btnSetting = new ImageButton(imageSetting, 80);
 	private JTextField tfSearch = new JTextField(15);
+	private JPanel pnlScroll = new JPanel();
+	private JScrollPane sPnl = new JScrollPane(pnlScroll, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 	
 	private String strMenu = "";
+	private ArrayList<File> listWbFile;
+	private HashMap<WorkbookButton, File> hashMapWbFile = new HashMap<>();
+	private ArrayList<WorkbookButton> listWbBtn = new ArrayList<>();
 	
 	public Frame() {
 		setTitle("나만의 문제집");
@@ -64,6 +74,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		
 		//객체 초기화
 		tfSearch.addKeyListener(this);
+		sPnl.getVerticalScrollBar().setUnitIncrement(20);
 		
 		//파일 경로 초기화
 		String separator = File.separator;
@@ -127,8 +138,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		pnlCenterMain.setLayout( new GridBagLayout() );
 		setMenu("Workbook");
 		setVisible(true);
-		
-		
 	} //생성자
 	
 	
@@ -154,11 +163,58 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	}
 	
 	/**
+	 * 지정된 경로의 폴더 내에서 원하는 확장자를 가진 파일만 File[]로 반환한다.
+	 * @param dir - 가져올 파일이 저장된 상위 폴더의 File 객체
+	 * @param extension - 가져올 파일의 확장자
+	 * @return File[] - dir 내부에서 일치하는 확장자를 가진 File 객체의 배열
+	*/
+	public File[] getFiles(File dir, String extension) {
+		File[] files = dir.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File f, String name) {
+				return name.endsWith(extension);
+			}
+		});
+		return files;
+	}
+	
+	/**
+	 * [문제집] Documents/MyWorkbook/Workbooks 폴더에 저장된 모든 문제집 파일을 다시 불러와 ArrayList에 삽입한다.
+	*/
+	public void reloadWb() {
+		//초기화
+		hashMapWbFile.clear();
+		listWbBtn.clear();
+		
+		String filePath = FOLDER_PATH + SEPARATOR + "Workbooks";
+		File f = new File(filePath);
+		File[] aryFile = getFiles(f, "workbook");
+		listWbFile = new ArrayList<File>( Arrays.asList(aryFile) );
+		
+		//딕셔너리에 문제집 버튼 삽입
+		for (File file : listWbFile) {
+			FileIO fIO = new FileIO();
+			Workbook wb = fIO.loadFile( file.getPath() );
+			WorkbookButton wbBtn = new WorkbookButton(wb);
+			hashMapWbFile.put(wbBtn, file);
+			
+			//리스트에 문제집 버튼 삽입
+			listWbBtn.add(wbBtn);
+		}
+		
+		sort(); //정렬 및 문제집 버튼 부착
+	}
+	
+	/**
 	 * [문제집] 메뉴에서 표시되는 문제집 목록을 정렬한다.
 	 * @param type - 정렬 종류 [ 0 : 이름순 (오름차순), 1 : 이름순 (내림차순), 2 : 문제 많은순,
 	 * 3 : 문제 적은순, 4 : 정답률 높은순, 5 : 정답률 낮은순 ]
 	*/
 	public void sort(int type) {
+		pnlCenter.removeAll();
+		pnlScroll.removeAll();
+		
+		//문제집 버튼 ArrayList 정렬
 		switch (type) {
 		//TODO 문제집 정렬 기능 추가
 			case 0: //이름순 (오름차순)
@@ -179,12 +235,96 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			default: //정답률 낮은순
 				System.out.println("정답률 낮은순");
 				break;
+		} //switch()
+		
+		//문제집 버튼을 화면에 부착
+		pnlCenter.setLayout( new GridLayout(1, 1) );
+		pnlCenter.add(sPnl);
+		
+		pnlScroll.setLayout( new BoxLayout(pnlScroll, BoxLayout.Y_AXIS) );
+		
+		for (int i=0; i<listWbBtn.size(); i++) {
+			pnlScroll.add( listWbBtn.get(i) );
 		}
 	} //sort()
 	
 	public void sort() {
 		this.sort(0);
 	} //sort()
+	
+	
+	class WorkbookButton extends JButton implements MouseListener {
+		private static final long serialVersionUID = 1L;
+		private Workbook wb = null;
+		private ImageIcon iconWb;
+		private Font font = new Font(FONT, Font.BOLD, 40);
+		
+		public WorkbookButton(Workbook wb) {
+			//TODO 문제집 버튼 추가
+			this.wb = wb;
+			
+			Image originImg = imageWorkbook.getImage();
+			Image coloredImge = ColorizeFilter.colorizeImg( originImg, wb.getColor() );
+			iconWb = new ImageIcon(coloredImge);
+			
+			setBackground(null);
+			setBorder(null);
+			setContentAreaFilled(false);
+			setPreferredSize( new Dimension(0, 100) );
+			setMaximumSize( new Dimension(10000, 100) );
+			setVisible(true);
+			addMouseListener(this);
+		} //생성자
+		
+		@Override
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			
+			int width = getWidth();
+			int height = getHeight();
+			String name = wb.getName();
+			int fontSize = font.getSize();
+			
+			g.drawImage(iconWb.getImage(), 5, 5, height - 10, height - 10, this);
+			
+			g.setFont(font); //폰트 지정
+			g.drawString( name, (int)(width * 0.5 - name.length() * fontSize * 0.25 ),
+					(int)(height *0.5 + fontSize * 0.3) );
+		}
+
+		@Override
+		public void mouseClicked(MouseEvent e) {}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			int mouse = e.getButton();
+			switch (mouse) {
+				case MouseEvent.BUTTON1: //마우스 왼쪽 클릭
+					
+					break;
+				case MouseEvent.BUTTON2: //마우스 오른쪽 클릭
+					break;
+			}
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			c.setCursor( new Cursor(Cursor.HAND_CURSOR) );
+			JButton btn = (JButton)e.getComponent();
+			btn.setBorder( new MatteBorder(1, 1, 1, 1, COLOR_BORDER) );
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			c.setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+			JButton btn = (JButton)e.getComponent();
+			btn.setBorder(null);
+		}
+		
+	} //WorkbookButton 클래스
 	
 	
 	class ImageButton extends JButton {
@@ -243,6 +383,8 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				lblSearch.setFont( new Font(getFontName(), Font.BOLD, 18) );
 				pnlWorkbookSearch.add(lblSearch);
 				pnlWorkbookSearch.add(tfSearch);
+				
+				reloadWb();
 				break;
 			case "Review":
 				lblMenuName.setText(" 오답 노트");

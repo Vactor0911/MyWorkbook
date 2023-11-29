@@ -5,8 +5,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.event.*;
 import java.io.*;
-import java.util.Dictionary;
-import java.util.Hashtable;
 
 public class Dialogs extends JDialog {
 	private static final long serialVersionUID = 1L;
@@ -52,12 +50,47 @@ public class Dialogs extends JDialog {
 }//Dialogs 클래스
 
 
-class MessaegBox extends JDialog {
+class MessageBox extends JDialog {
 	private static final long serialVersionUID = 1L;
 	
 	private JLabel lblText = new JLabel();
 	private JButton btnOk = new JButton("확인");
 	private JButton btnCancel = new JButton("취소");
+	
+	//JFrame
+	public MessageBox(JFrame frame) {
+		this(frame, "", null, null);
+	}
+	
+	public MessageBox(JFrame frame, String msg) {
+		this(frame, msg, null, null);
+	}
+	
+	public MessageBox(JFrame frame, String msg, String btnType) {
+		this(frame, msg, btnType, null);
+	}
+	
+	public MessageBox(JFrame frame, String msg, String btnType, String iconType) {
+		super(frame, frame.getName(), true);
+	}
+	
+	
+	//JDialog
+	public MessageBox(JDialog dialog) {
+		this(dialog, "", null, null);
+	}
+	
+	public MessageBox(JDialog dialog, String msg) {
+		this(dialog, msg, null, null);
+	}
+	
+	public MessageBox(JDialog dialog, String msg, String btnType) {
+		this(dialog, msg, btnType, null);
+	}
+	
+	public MessageBox(JDialog dialog, String msg, String btnType, String iconType) {
+		super(dialog, dialog.getName(), true);
+	}
 } //MessageBox 클래스
 
 
@@ -375,3 +408,25 @@ class WbAddDlg extends Dialogs implements ActionListener {
 		}
 	} //actionPerformed()
 } //WbAddDlg 클래스
+
+
+class QOptionDlg extends Dialogs implements ActionListener {
+	private static final long serialVersionUID = 1L;
+	
+	private Frame frame;
+	private JLabel lblTitle = getLabel();
+
+	public QOptionDlg(Frame frame) {
+		super(frame, "문제 풀이 옵션", 300, 400);
+		this.frame = frame;
+		lblTitle.setText("문제집 추가");
+		
+		Container c = getContentPane();
+		c.setLayout( new GridLayout(3, 1, 0, 0) );
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		
+	}
+}
