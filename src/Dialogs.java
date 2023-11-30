@@ -6,6 +6,239 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.*;
 import java.io.*;
 
+class MessageBox extends JDialog implements ActionListener {
+	private static final long serialVersionUID = 1L;
+	//버튼 타입 id
+	static final int btnOK = 1;
+	static final int btnOK_CANCEL = 2;
+	static final int btnYES_NO = 3;
+	//버튼 클릭 id
+	static final int idOK = 1;
+	static final int idCANCEL = 2;
+	static final int idYES = 3;
+	static final int idNO = 4;
+	//아이콘 id
+	static final int iconINFORMATION = 1;
+	static final int iconQUESTION = 2;
+	static final int iconEXCLAMATION = 3;
+	static final int iconERROR = 4;
+	
+	private final ImageIcon iconInformation = new ImageIcon("images/Workbook.png");
+	private final ImageIcon iconQuestion = new ImageIcon("images/iconQuestion.png");
+	private final ImageIcon iconExclamation = new ImageIcon("images/iconExclamation.png");
+	private final ImageIcon iconError = new ImageIcon("images/iconError.png");
+	
+	private final Font font = new Font(Frame.getFontName(), Font.PLAIN, 15);
+	
+	private JPanel pnlSouth = new JPanel();
+	private JPanel pnlCenter = new JPanel();
+	private JPanel pnlCenterMain = new JPanel();
+	private JButton btnOk = new JButton("확인");
+	private JButton btnCancel = new JButton("취소");
+	private JButton btnYes = new JButton("예");
+	private JButton btnNo = new JButton("아니오");
+	
+	private int answer = 0;
+	private String msg;
+	private int btnType;
+	private int iconType;
+	
+	//JFrame
+	public MessageBox(JFrame frame, String msg, int btnType, int iconType) {
+		super(frame, frame.getTitle(), true);
+		this.msg = msg;
+		this.btnType = btnType;
+		this.iconType = iconType;
+		setLocation( frame.getLocation() );
+		draw();
+	}
+	
+	//JDialog
+	public MessageBox(JDialog dialog, String msg, int btnType, int iconType) {
+		super(dialog, dialog.getTitle(), true);
+		this.msg = msg;
+		this.btnType = btnType;
+		this.iconType = iconType;
+		setLocation( dialog.getLocation() );
+		draw();
+	}
+	
+
+	/**
+	 * 메시지 박스 대화상자를 그린다.
+	 */
+	public void draw() {
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		setResizable(false);
+		
+		JPanel pnlBase = new JPanel();
+		pnlBase.setLayout( new BorderLayout() );
+		pnlBase.setBackground(null);
+		add(pnlBase);
+		
+		//버튼 객체 설정
+		JButton[] aryBtn = { btnOk, btnCancel, btnYes, btnNo };
+		for (int i=0; i<aryBtn.length; i++) {
+			Dimension size = new Dimension(80, 30);
+			aryBtn[i].setPreferredSize(size);
+			aryBtn[i].setMinimumSize(size);
+			aryBtn[i].setFont(font);
+			aryBtn[i].addActionListener(this);
+		}
+
+		//버튼
+		pnlBase.add(pnlSouth, BorderLayout.SOUTH);
+		pnlSouth.setLayout( new FlowLayout(FlowLayout.CENTER, 5, 10) );
+		pnlSouth.setBackground( new Color(220, 220, 220) );
+		switch (btnType) {
+			case btnOK:
+				pnlSouth.add(btnOk);
+				break;
+			case btnOK_CANCEL:
+				pnlSouth.add(btnOk);
+				pnlSouth.add(btnCancel);
+				break;
+			case btnYES_NO:
+				pnlSouth.add(btnYes);
+				pnlSouth.add(btnNo);
+				break;
+			default:
+				return;
+		}
+		
+		//메시지
+		pnlCenterMain.setLayout( new BorderLayout(5, 0) );
+		pnlCenterMain.setBorder( BorderFactory.createEmptyBorder(10, 20, 10, 20) );
+		pnlBase.add(pnlCenterMain, BorderLayout.CENTER);
+		
+		pnlCenter.setLayout( new BoxLayout(pnlCenter, BoxLayout.Y_AXIS) );
+		pnlCenterMain.add(pnlCenter, BorderLayout.CENTER);
+		
+		String[] aryMsg = msg.split("\n");
+		for (int i=0; i<aryMsg.length; i++) {
+			JLabel lbl = new JLabel(aryMsg[i], SwingConstants.LEFT);
+			lbl.setFont(font);
+			pnlCenter.add(lbl);
+		}
+		
+		pack();
+		
+		//아이콘
+		Image icon = null;
+		switch (iconType) {
+			case iconINFORMATION:
+				icon = iconInformation.getImage();
+				break;
+			case iconQUESTION:
+				icon = iconQuestion.getImage();
+				break;
+			case iconEXCLAMATION:
+				icon = iconExclamation.getImage();
+				break;
+			case iconERROR:
+				icon = iconError.getImage();
+				break;
+			default:
+				return;
+		}
+		
+		int size = pnlCenterMain.getHeight();
+		icon = icon.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+		JLabel lblIcon = new JLabel( new ImageIcon(icon) );
+		lblIcon.setPreferredSize( new Dimension(size, size) );
+		pnlCenterMain.add(lblIcon, BorderLayout.WEST);
+		
+		pack();
+		setVisible(true);
+	} //draw()
+	
+	/**
+	 * 메시지 박스 대화상자를 생성한다.
+	 * @param frame - 대화상자를 귀속시킬 JFrame 프레임
+	 * @param msg - 표시할 메시지
+	 * @param btnType - 표시할 버튼 레이아웃
+	 * @param iconType - 표시할 아이콘
+	 * @return 클릭한 버튼의 id
+	 */
+	public static int show(JFrame frame, String msg, int btnType, int iconType) {
+		MessageBox ob = new MessageBox(frame, msg, btnType, iconType);
+		return ob.answer;
+	}
+	
+	/**
+	 * 메시지 박스 대화상자를 생성한다.
+	 * @param frame - 대화상자를 귀속시킬 JFrame 프레임
+	 * @param msg - 표시할 메시지
+	 * @param btnType - 표시할 버튼 레이아웃
+	 * @return 클릭한 버튼의 id
+	 */
+	public static int show(JFrame frame, String msg, int btnType) {
+		return show(frame, msg, btnType, iconINFORMATION);
+	}
+	
+	/**
+	 * 메시지 박스 대화상자를 생성한다.
+	 * @param frame - 대화상자를 귀속시킬 JFrame 프레임
+	 * @param msg - 표시할 메시지
+	 * @return 클릭한 버튼의 id
+	 */
+	public static int show(JFrame frame, String msg) {
+		return show(frame, msg, btnOK, iconINFORMATION);
+	}
+	
+	/**
+	 * 메시지 박스 대화상자를 생성한다.
+	 * @param dialog - 대화상자를 귀속시킬 JDialog 프레임
+	 * @param msg - 표시할 메시지
+	 * @param btnType - 표시할 버튼 레이아웃
+	 * @param iconType - 표시할 아이콘
+	 * @return 클릭한 버튼의 id
+	 */
+	public static int show(JDialog dialog, String msg, int btnType, int iconType) {
+		MessageBox ob = new MessageBox(dialog, msg, btnType, iconType);
+		return ob.answer;
+	}
+	
+	/**
+	 * 메시지 박스 대화상자를 생성한다.
+	 * @param dialog - 대화상자를 귀속시킬 JDialog 프레임
+	 * @param msg - 표시할 메시지
+	 * @param btnType - 표시할 버튼 레이아웃
+	 * @return 클릭한 버튼의 id
+	 */
+	public static int show(JDialog dialog, String msg, int btnType) {
+		return show(dialog, msg, btnType, iconINFORMATION);
+	}
+	
+	/**
+	 * 메시지 박스 대화상자를 생성한다.
+	 * @param dialog - 대화상자를 귀속시킬 JDialog 프레임
+	 * @param msg - 표시할 메시지
+	 * @return 클릭한 버튼의 id
+	 */
+	public static int show(JDialog dialog, String msg) {
+		return show(dialog, msg, btnOK, iconINFORMATION);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if( e.getSource().equals(btnOk) ) {
+			answer = idOK;
+		}
+		else if ( e.getSource().equals(btnCancel) ) {
+			answer = idCANCEL;
+		}
+		else if ( e.getSource().equals(btnYes) ) {
+			answer = idYES;
+		}
+		else if ( e.getSource().equals(btnNo) ) {
+			answer = idNO;
+		}
+		this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) );
+	}
+} //MessageBox 클래스
+
+
 public class Dialogs extends JDialog {
 	private static final long serialVersionUID = 1L;
 	
@@ -48,50 +281,6 @@ public class Dialogs extends JDialog {
 		return lblTitle;
 	}
 }//Dialogs 클래스
-
-
-class MessageBox extends JDialog {
-	private static final long serialVersionUID = 1L;
-	
-	private JLabel lblText = new JLabel();
-	private JButton btnOk = new JButton("확인");
-	private JButton btnCancel = new JButton("취소");
-	
-	//JFrame
-	public MessageBox(JFrame frame) {
-		this(frame, "", null, null);
-	}
-	
-	public MessageBox(JFrame frame, String msg) {
-		this(frame, msg, null, null);
-	}
-	
-	public MessageBox(JFrame frame, String msg, String btnType) {
-		this(frame, msg, btnType, null);
-	}
-	
-	public MessageBox(JFrame frame, String msg, String btnType, String iconType) {
-		super(frame, frame.getName(), true);
-	}
-	
-	
-	//JDialog
-	public MessageBox(JDialog dialog) {
-		this(dialog, "", null, null);
-	}
-	
-	public MessageBox(JDialog dialog, String msg) {
-		this(dialog, msg, null, null);
-	}
-	
-	public MessageBox(JDialog dialog, String msg, String btnType) {
-		this(dialog, msg, btnType, null);
-	}
-	
-	public MessageBox(JDialog dialog, String msg, String btnType, String iconType) {
-		super(dialog, dialog.getName(), true);
-	}
-} //MessageBox 클래스
 
 
 //문제집 - [정렬]
@@ -162,6 +351,11 @@ class WbAddDlg extends Dialogs implements ActionListener {
 		super(frame, "문제집 추가", 300, 400);
 		this.frame = frame;
 		lblTitle.setText("문제집 추가");
+		
+		//버튼 객체 폰트 설정
+		Font font = new Font(Frame.getFontName(), Font.PLAIN, 15);
+		btnNewOk.setFont(font);
+		btnLoad.setFont(font);
 		
 		Container c = getContentPane();
 		c.add(pnlCenter, BorderLayout.CENTER);
@@ -369,7 +563,9 @@ class WbAddDlg extends Dialogs implements ActionListener {
     		Workbook wb = new Workbook(fileName, fileColor);
     		FileIO ob = new FileIO();
         	ob.saveFile(filePath, wb);
-	    	
+        	MessageBox.show(this, "문제집을 성공적으로 생성했습니다!");
+        	
+        	frame.reloadWb();
 	    	this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 		}
 		else if (e.getSource() == btnLoad) { //불러오기
@@ -398,8 +594,9 @@ class WbAddDlg extends Dialogs implements ActionListener {
 		    	String folderPath = Frame.getFolderPath() + separator + "Workbooks";
 		    	filePath = folderPath + separator + fileName + ".workbook";
 				ob.saveFile(filePath, wb);
+				MessageBox.show(this, "문제집을 성공적으로 불러왔습니다!");
 				
-				frame.sort();
+				frame.reloadWb();
 				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 			}
 			else { //파일 선택 에러
@@ -410,23 +607,113 @@ class WbAddDlg extends Dialogs implements ActionListener {
 } //WbAddDlg 클래스
 
 
-class QOptionDlg extends Dialogs implements ActionListener {
+class WbOptionDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
+	private final ImageIcon imageSolve = new ImageIcon("images/Workbook.png");
+	private final ImageIcon imageEdit = new ImageIcon("images");
+	private final ImageIcon imageExport = new ImageIcon("images");
+	private final ImageIcon imageInfo = new ImageIcon("images");
 	
-	private Frame frame;
 	private JLabel lblTitle = getLabel();
+	private JPanel pnlCenter = new JPanel();
+	private Workbook wb;
+	private ImageButton btnSolve = new ImageButton(imageSolve, "문제 풀이");
+	private ImageButton btnEdit = new ImageButton(imageEdit, "수정");
+	private ImageButton btnExport = new ImageButton(imageExport, "내보내기");
+	private ImageButton btnInfo = new ImageButton(imageInfo, "정보");
 
-	public QOptionDlg(Frame frame) {
-		super(frame, "문제 풀이 옵션", 300, 400);
-		this.frame = frame;
-		lblTitle.setText("문제집 추가");
+	public WbOptionDlg(Frame frame, Workbook wb) {
+		super(frame, wb.getName(), 300, 300);
+		setMinimumSize( new Dimension(300, 300) );
+		this.wb = wb;
+		lblTitle.setText( wb.getName(15) );
 		
-		Container c = getContentPane();
-		c.setLayout( new GridLayout(3, 1, 0, 0) );
+		add(pnlCenter, BorderLayout.CENTER);
+		pnlCenter.setLayout( new GridLayout(4, 1, 0, 0) );
+		
+		ImageButton[] aryBtn = { btnSolve, btnEdit, btnExport, btnInfo };
+		for (ImageButton k : aryBtn) {
+			pnlCenter.add(k);
+			k.addActionListener(this);
+		}
+		
+		pack();
+		setVisible(true);
+	} //생성자
+	
+	class ImageButton extends JButton implements MouseListener {
+		private static final long serialVersionUID = 1L;
+		private JPanel pnlBase = new JPanel();
+		private JLabel lblIcon;
+		private JLabel lblText = new JLabel("", SwingConstants.CENTER);
+		private String text = "";
+		
+		public ImageButton (ImageIcon icon, String text) {
+			setBackground(null);
+			setBorder(null);
+			setContentAreaFilled(false);
+			setPreferredSize( new Dimension(0, 60) );
+			setVisible(true);
+			addMouseListener(this);
+			this.text = text;
+			
+			JPanel pnlBase = new JPanel();
+			add(pnlBase, BorderLayout.CENTER);
+			pnlBase.setBorder( BorderFactory.createEmptyBorder(5, 5, 5, 5) );
+			pnlBase.setLayout( new BorderLayout() );
+			
+			Image iconBtn = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+			
+			lblIcon = new JLabel( new ImageIcon(iconBtn) );
+			pnlBase.add(lblIcon, BorderLayout.WEST);
+			
+			lblText.setText(text);
+			lblText.setFont( new Font(Frame.getFontName(), Font.BOLD, 20) );
+			pnlBase.add(lblText, BorderLayout.CENTER);
+		}
+
+		@Override
+		public void mouseClicked(MouseEvent e) {}
+
+		@Override
+		public void mousePressed(MouseEvent e) {}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
+			JButton btn = (JButton)e.getComponent();
+			btn.setBorder( new MatteBorder( 1, 1, 1, 1, Frame.getColorBorder() ) );
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+			JButton btn = (JButton)e.getComponent();
+			btn.setBorder(null);
+		}
+		
+		@Override
+		public String getText() {
+			return text;
+		}
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		//TODO 버튼 클릭 이벤트 기능 구현
+		if (e.getSource() == btnSolve) { //문제 풀이
+		}
+		else if (e.getSource() == btnEdit) { //수정
+		}
+		else if (e.getSource() == btnExport) { //내보내기
+		}
+		else if (e.getSource() == btnInfo) { //정보
+		}
 		
+		System.out.println( ( (ImageButton)e.getSource() ).getText() );
+		this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 	}
-}
+} //QOptionDlg 클래스
