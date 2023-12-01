@@ -207,12 +207,3 @@ class ColorizeFilter extends RGBImageFilter implements Serializable {
         return (alpha << 24) | (red << 16) | (green << 8) | blue;
     }
 } //ColorizeFilter 클래스
-
-
-class IconLabel extends JLabel {
-	private static final long serialVersionUID = 1L;
-	
-	public IconLabel(ImageIcon img, String text) {
-		
-	}
-}
