@@ -11,12 +11,15 @@ import java.io.*;
 public class Frame extends JFrame implements ActionListener, MouseListener, KeyListener {
 	private static final long serialVersionUID = 1L;
 	//이미지
+	private static final ImageIcon imageProgramIcon = new ImageIcon("images/ProgramIcon.png");
 	private static final ImageIcon imageWorkbook = new ImageIcon("images/Workbook.png");
 	private static final ImageIcon imageReview = new ImageIcon("images/Review.png");
 	private static final ImageIcon imageHistory = new ImageIcon("images/History.png");
 	private static final ImageIcon imageSetting = new ImageIcon("images/Setting.png");
 	private static final ImageIcon imageSort = new ImageIcon("images/Sort.png");
 	private static final ImageIcon imageAddWorkbook = new ImageIcon("images/AddWorkbook.png");
+	private static final ImageIcon imageRevert = new ImageIcon("images/Revert.png");
+	private static final ImageIcon imageAddQuestion = new ImageIcon("images/AddQuestion.png");
 	
 	private static final String FONT_NAME = "맑은 고딕";
 	private static final Color COLOR = Color.LIGHT_GRAY;
@@ -26,20 +29,25 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	private static final String FOLDER_PATH = System.getProperty("user.home") +
 			File.separator + "Documents" + File.separator + "MyWorkbook";
 
-	private final Frame frame = this;
+	private Frame frame = this;
 	private Container c;
+	
 	private JPanel pnlNorth = new JPanel();
 	private JPanel pnlNorthEast = new JPanel();
 	private JPanel pnlSouth = new JPanel();
 	private JPanel pnlCenter = new JPanel();
 	private JPanel pnlCenterMain = new JPanel();
 	private JLabel lblMenuName = new JLabel(" 문제집");
-	private ImageButton btnSort = new ImageButton(imageSort, 50);
-	private ImageButton btnAddWorkbook = new ImageButton(imageAddWorkbook, 50);
+	
 	private ImageButton btnWorkbook = new ImageButton(imageWorkbook, 80);
 	private ImageButton btnReview = new ImageButton(imageReview, 80);
 	private ImageButton btnHistory = new ImageButton(imageHistory, 80);
 	private ImageButton btnSetting = new ImageButton(imageSetting, 80);
+	private ImageButton btnSort = new ImageButton(imageSort, 50);
+	private ImageButton btnAddWorkbook = new ImageButton(imageAddWorkbook, 50);
+	private ImageButton btnRevert = new ImageButton(imageRevert, 50);
+	private QuestionButton btnAddQuestion = new QuestionButton();
+	
 	private JTextField tfSearch = new JTextField(15);
 	private JPanel pnlScroll = new JPanel();
 	private JScrollPane sPnl = new JScrollPane(pnlScroll, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
@@ -49,12 +57,15 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	private ArrayList<File> listWbFile;
 	private HashMap<WorkbookButton, File> hashMapWbFile = new HashMap<>();
 	private ArrayList<WorkbookButton> listWbBtn = new ArrayList<>();
+	private Workbook workbookBuffer = null;
 	
 	public Frame() {
 		setTitle("나만의 문제집");
 		setSize(500, 700);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setMinimumSize( new Dimension(500, 700) );
+		
+		setIconImage( imageProgramIcon.getImage() );
 		
 		//프레임을 화면 정중앙에 위치
 		Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
@@ -63,11 +74,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		setLocation(x, y);
 		
 		//ImageButton에 ActionListener 추가
-		ImageButton[] aryImageButton = {
-				btnSort, btnAddWorkbook, btnWorkbook, btnReview, btnHistory, btnSetting
-				};
-		for (int i=0; i<aryImageButton.length; i++) {
-			ImageButton imgBtn = aryImageButton[i];
+		ImageButton[] aryImgBtn = { btnWorkbook, btnReview, btnHistory, btnSetting, btnSort,
+				btnAddWorkbook, btnRevert };
+		for (ImageButton imgBtn : aryImgBtn) {
 			imgBtn.setPreferredSize( imgBtn.getSize() );
 			imgBtn.addActionListener(this);
 			imgBtn.addMouseListener(this);
@@ -95,7 +104,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
     	}
 		
 		//Gui 그리기
-		c = getContentPane();
+    	c = getContentPane();
 		c.setLayout( new BorderLayout() );
 		c.add(pnlNorth, BorderLayout.NORTH);
 		
@@ -117,8 +126,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		pnlSouth.setPreferredSize( new Dimension(0, 130) );
 		pnlSouth.setLayout( new FlowLayout(FlowLayout.CENTER, 25, 10) );
 		
+		ImageButton[] aryImageButton = { btnWorkbook, btnReview, btnHistory, btnSetting };
 		String[] aryButtonName = { "문제집", "오답 노트", "기록", "설정" };
-		for (int i=2; i<aryImageButton.length; i++) {
+		for (int i=0; i<aryImageButton.length; i++) {
 			JPanel pnlTemp = new JPanel();
 			pnlSouth.add(pnlTemp);
 			pnlTemp.setPreferredSize( new Dimension(80, 110) );
@@ -126,10 +136,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			pnlTemp.setBackground(null);
 			pnlTemp.add(aryImageButton[i], BorderLayout.CENTER);
 			
-			JLabel lblTemp = new JLabel(aryButtonName[i-2], SwingConstants.CENTER);
+			JLabel lblTemp = new JLabel(aryButtonName[i], SwingConstants.CENTER);
 			pnlTemp.add(lblTemp, BorderLayout.SOUTH);
 			lblTemp.setPreferredSize( new Dimension(80, 30) );
-			lblTemp.setFont( new Font(FONT_NAME, Font.BOLD, 16) );
+			lblTemp.setFont( new Font(Frame.getFontName(), Font.BOLD, 16) );
 		}
 		
 		c.add(pnlCenter, BorderLayout.CENTER);
@@ -142,7 +152,30 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	} //생성자
 	
 	
-	class WorkbookButton extends JButton implements MouseListener {
+	class ImageButton extends JButton {
+		private static final long serialVersionUID = 1L;
+		private ImageIcon image;
+		private int size = 0;
+		
+		public ImageButton(ImageIcon image, int size) {
+			this.image = image;
+			this.size = size;
+			
+			setSize( new Dimension(size, size) );
+			setBackground(null);
+			setBorder(null);
+			setContentAreaFilled(false);
+		}
+		
+		@Override
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			g.drawImage(image.getImage(), 0, 0, size, size, this);
+		}
+	} //ImageButton 클래스
+	
+	
+	class WorkbookButton extends JButton implements ActionListener {
 		private static final long serialVersionUID = 1L;
 		private Workbook wb = null;
 		
@@ -160,7 +193,8 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			setPreferredSize( new Dimension(0, 100) );
 			setMaximumSize( new Dimension(10000, 100) );
 			setVisible(true);
-			addMouseListener(this);
+			addActionListener(this);
+			addMouseListener( new MyMouseAdapter() );
 			
 			JPanel pnlBase = new JPanel();
 			add(pnlBase, BorderLayout.CENTER);
@@ -188,62 +222,107 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			pnlCenter.add(lblNumQuestion);
 		} //생성자
 		
-		@Override
-		public void mouseClicked(MouseEvent e) {}
+		private class MyMouseAdapter extends MouseAdapter {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
+				JButton btn = (JButton)e.getComponent();
+				btn.setBorder( new MatteBorder(1, 1, 1, 1, COLOR_BORDER) );
+			}
 
-		@Override
-		public void mousePressed(MouseEvent e) {
-			int mouse = e.getButton();
-			switch (mouse) {
-				case MouseEvent.BUTTON1: //마우스 왼쪽 클릭
-					new WbOptionDlg(frame, wb);
-					break;
-				case MouseEvent.BUTTON2: //마우스 오른쪽 클릭
-					break;
+			@Override
+			public void mouseExited(MouseEvent e) {
+				getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+				JButton btn = (JButton)e.getComponent();
+				btn.setBorder(null);
 			}
 		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {}
-
-		@Override
-		public void mouseEntered(MouseEvent e) {
-			getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
-			JButton btn = (JButton)e.getComponent();
-			btn.setBorder( new MatteBorder(1, 1, 1, 1, COLOR_BORDER) );
-		}
-
-		@Override
-		public void mouseExited(MouseEvent e) {
-			getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
-			JButton btn = (JButton)e.getComponent();
-			btn.setBorder(null);
-		}
 		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			new WbOptionDlg(frame, wb);
+		}
 	} //WorkbookButton 클래스
 	
 	
-	class ImageButton extends JButton {
+	class QuestionButton extends JButton implements ActionListener {
 		private static final long serialVersionUID = 1L;
-		private ImageIcon image;
-		private int size = 0;
 		
-		public ImageButton(ImageIcon image, int size) {
-			this.image = image;
-			this.size = size;
+		private Workbook workbook = null;
+		private int index = 0;
+		private MyMouseAdapter adapter = new MyMouseAdapter();
+		
+		//문제 추가 버튼
+		public QuestionButton() {
+			init();
 			
-			setSize( new Dimension(size, size) );
-			setBackground(null);
-			setBorder(null);
-			setContentAreaFilled(false);
+			JPanel pnlBase = new JPanel();
+			pnlBase.setLayout( new GridLayout() );
+			add(pnlBase);
+			
+			Image resizedImage = imageAddQuestion.getImage().getScaledInstance(70, 70,
+					Image.SCALE_SMOOTH);
+			JLabel lblAddQuestion = new JLabel( new ImageIcon(resizedImage) );
+			pnlBase.add(lblAddQuestion);
+		} //생성자
+		
+		//문제 버튼
+		public QuestionButton(Workbook workbook, int index) {
+			init();
+			
+			this.workbook = workbook;
+			this.index = index;
+			setPreferredSize( new Dimension(0, 100) );
+			
+			JPanel pnlBase = new JPanel();
+			pnlBase.setLayout( new BorderLayout() );
+			pnlBase.setBorder( BorderFactory.createEmptyBorder(1, 0, 1, 0) );
+			
+			JLabel lblIndex = new JLabel( Integer.toString(index) );
+			pnlBase.add(lblIndex, BorderLayout.WEST);
+			
+			JPanel pnlCenter = new JPanel();
+			pnlCenter.setLayout( new BorderLayout() );
+		} //생성자
+		
+		private class MyMouseAdapter extends MouseAdapter {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				c.setCursor( new Cursor(Cursor.HAND_CURSOR) );
+				JButton btn = (JButton)e.getComponent();
+				btn.setBorder( new MatteBorder(1, 1, 1, 1, COLOR_BORDER) );
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				c.setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+				JButton btn = (JButton)e.getComponent();
+				btn.setBorder(null);
+			}
 		}
 		
-		@Override
-		public void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			g.drawImage(image.getImage(), 0, 0, size, size, this);
+		//초기화
+		public void init() {
+			setBorder( BorderFactory.createEmptyBorder(5, 5, 5, 5) );
+			setBackground(null);
+			setContentAreaFilled(false);
+			setPreferredSize( new Dimension(0, 100) );
+			setMaximumSize( new Dimension(10000, 100) );
+			setVisible(true);
+			addActionListener(this);
+			addMouseListener(adapter);
 		}
-	} //ImageButton 클래스
+
+		@Override
+		public void actionPerformed(ActionEvent e) { //문제 버튼 클릭
+			if (workbook == null) { //문제 추가
+				QuestionDlg.addQuestion(frame, null, QuestionDlg.idADD);
+			}
+			else { //문제 수정
+				setMenu( "EditQuestion", workbook, workbook.getQuestion().get(index) );
+			}
+		}
+	} //QuestionButton 클래스
 	
 	
 	//getter
@@ -275,12 +354,12 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	 * @return File[] - dir 내부에서 일치하는 확장자를 가진 File 객체의 배열
 	*/
 	public File[] getFiles(File dir, String extension) {
-		File[] files = dir.listFiles(new FilenameFilter() {
+		File[] files = dir.listFiles( new FilenameFilter() {
 			@Override
 			public boolean accept(File f, String name) {
 				return name.endsWith(extension);
 			}
-		});
+		} );
 		return files;
 	}
 	
@@ -374,71 +453,112 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	/**
 	 * Frame 객체에서 표시할 메뉴를 설정한다.
 	 * @param menu - 화면에 표시할 메뉴의 이름; [ Workbook : 문제집, Review : 오답노트, History : 기록,
-	 * Setting : 설정 ]
+	 * Setting : 설정, Question : [문제집] - 문제, AddQuestion : [문제집] - 문제 추가 ]
+	 * @param workbook - 문제집 구조체
+	 * @param question - 문제 구조체
 	*/
-	public void setMenu(String menu) {
-		ArrayList<ImageButton> listImageButton = new ArrayList<ImageButton>();
-		
-		//이미 해당 메뉴일 경우 종료
-		if (menu == strMenu) {
-			return;
-		}
-		
+	public void setMenu(String menu, Workbook workbook, Question question) {
+		c.setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
 		pnlNorthEast.removeAll();
 		pnlCenter.removeAll();
 		
 		switch (menu) {
-			case "Workbook":
+			case "Workbook": default: //문제집 메뉴
 				lblMenuName.setText(" 문제집");
-				listImageButton.add(btnSort);
-				listImageButton.add(btnAddWorkbook);
+				pnlNorthEast.add(btnSort);
+				pnlNorthEast.add(btnAddWorkbook);
 				
 				JPanel pnlWorkbookSearch = new JPanel();
-				pnlWorkbookSearch.setBackground(COLOR);
-				pnlWorkbookSearch.setBorder( new MatteBorder(0,0,2,0,COLOR_BORDER) );
+				pnlWorkbookSearch.setBackground( Frame.getColor() );
+				pnlWorkbookSearch.setBorder( new MatteBorder( 0, 0, 2, 0, Frame.getColorBorder() ) );
 				pnlWorkbookSearch.setPreferredSize( new Dimension(0, 30) );
 				pnlWorkbookSearch.setLayout( new FlowLayout(FlowLayout.RIGHT, 10, 2) );
 				pnlCenter.add(pnlWorkbookSearch, BorderLayout.NORTH);
 				
 				JLabel lblSearch = new JLabel("검색", SwingConstants.CENTER);
-				lblSearch.setFont( new Font(getFontName(), Font.BOLD, 18) );
+				lblSearch.setFont( new Font(Frame.getFontName(), Font.BOLD, 18) );
 				pnlWorkbookSearch.add(lblSearch);
 				pnlWorkbookSearch.add(tfSearch);
 				
-				pnlCenter.add(pnlCenterMain, BorderLayout.CENTER);				
-				reloadWb();
+				pnlCenter.add(pnlCenterMain, BorderLayout.CENTER);
+				reloadWb(); //문제집 파일 로드 및 버튼 그리기
 				break;
-			case "Review":
+			case "Review": //오답 노트 메뉴
 				lblMenuName.setText(" 오답 노트");
 				break;
-			case "History":
+			case "History": //기록 메뉴
 				lblMenuName.setText(" 기록");
 				break;
-			default:
+			case "Setting": //설정 메뉴
 				lblMenuName.setText(" 설정");
+				break;
+			case "Question": //[문제집] - 문제 메뉴
+				lblMenuName.setText( " " + workbook.getName(20) );
+				pnlNorthEast.add(btnRevert);
+				
+				pnlCenter.add(sPnl, BorderLayout.CENTER);
+				
+				pnlScroll.removeAll();
+				pnlScroll.setLayout( new BoxLayout(pnlScroll, BoxLayout.Y_AXIS) );
+				for (int i=0; i<workbook.getQuestion().size(); i++) {
+					pnlScroll.add( new QuestionButton(workbook, i) );
+				}
+				pnlScroll.add(btnAddQuestion);
+				break;
+			case "AddQuestion":
+				lblMenuName.setText(" 문제 추가");
+				pnlNorthEast.add(btnRevert);
+				
+				pnlCenter.add(sPnl, BorderLayout.CENTER);
+				pnlScroll.removeAll();
+				pnlScroll.setLayout( new BoxLayout(pnlScroll, BoxLayout.Y_AXIS) );
+				
+				
 				break;
 		} //switch()
 		
-		for (ImageButton k : listImageButton) {
-			pnlNorthEast.add(k);
-		}
-		
+		this.workbookBuffer = workbook;
 		c.repaint();
 		strMenu = menu;
+		System.out.println(menu);
 	} //setMenu()
+	
+	public void setMenu(String menu, Workbook workbook) {
+		setMenu(menu, workbook, null);
+	}
+	
+	public void setMenu(String menu, Question question) {
+		setMenu(menu, null, question);
+	}
+	
+	public void setMenu(String menu) {
+		setMenu(menu, null, null);
+	}
 	
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
 		//상단 메뉴
-		if (strMenu == "Workbook") {
-			if ( source.equals(btnSort) ) { //정렬
-				new WbSortDlg(this);
-			}
-			if ( source.equals(btnAddWorkbook) ) {
-				new WbAddDlg(this);
-			}
+		switch (strMenu) {
+			case "Workbook": //문제집 메뉴
+				if ( source.equals(btnSort) ) { //정렬
+					new WbSortDlg(this);
+				}
+				if ( source.equals(btnAddWorkbook) ) {
+					new WbAddDlg(this);
+				}
+				break;
+			case "Question": //문제 메뉴
+				if( source.equals(btnRevert) ) { //되돌리기
+					setMenu("Workbook");
+				}
+				break;
+			case "AddQuestion": //문제 추가
+				if ( source.equals(btnRevert) ) { //되돌릭
+					setMenu("Question", workbookBuffer);
+				}
+				break;
 		}
 		
 		//하단 메뉴
