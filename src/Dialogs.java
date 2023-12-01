@@ -5,6 +5,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.event.*;
 import java.io.*;
+import java.util.ArrayList;
 
 class MessageBox extends JDialog implements ActionListener {
 	private static final long serialVersionUID = 1L;
@@ -287,10 +288,12 @@ public class Dialogs extends JDialog {
 class WbSortDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	
+	private final ImageIcon imgSortAccuracyAsc = new ImageIcon("images/SortAccuracyAscend.png");
+		
 	private Frame frame;
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
-	private JButton[] aryBtn = new JButton[6];
+	private ImageButton[] aryBtn = new ImageButton[6];
 	
 	public WbSortDlg(Frame frame) {
 		super(frame, "문제집 정렬", 400, 600);
@@ -301,17 +304,72 @@ class WbSortDlg extends Dialogs implements ActionListener {
 		c.add(pnlCenter, BorderLayout.CENTER);
 		
 		pnlCenter.setLayout( new GridLayout(6, 1, 0 ,0) );
+		ImageIcon[] aryImageIcon = { imgSortAccuracyAsc };
 		String[] arySearchList = { "이름순 (오름차순)", "이름순 (내림차순)", "문제 많은순", "문제 적은순",
 				"정답률 높은순", "정답률 낮은순" };
-		for(int i=0; i<arySearchList.length; i++) {
-			aryBtn[i] = new JButton( arySearchList[i] );
+		for(int i=0; i<1; i++) {
+			aryBtn[i] = new ImageButton( aryImageIcon[i], arySearchList[i] );
 			aryBtn[i].addActionListener(this);
 			pnlCenter.add( aryBtn[i] );
+			System.out.println(aryBtn[i].getText() );
 		}
 		
 		setVisible(true);
 	} //생성자
+	
+	class ImageButton extends JButton {
+		private static final long serialVersionUID = 1L;
+		private MyMouseAdapter adapter = new MyMouseAdapter();
+		private String text = "";
+		
+		public ImageButton(ImageIcon image, String text) {
+			setBackground(null);
+			setBorder(null);
+			setContentAreaFilled(false);
+			setPreferredSize( new Dimension(0, 60) );
+			addMouseListener(adapter);
+			this.text = text;
+			
+			JPanel pnlBase = new JPanel();
+			pnlBase.setLayout( new BorderLayout() );
+			add(pnlBase, BorderLayout.CENTER);
+			
+			//아이콘 그리기
+			Image resizedImage = image.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+			JLabel lblImage = new JLabel( new ImageIcon(resizedImage) );
+			lblImage.setPreferredSize( new Dimension(80, 50) );
+			pnlBase.add(lblImage, BorderLayout.WEST);
+			
+			//텍스트 그리기
+			JLabel lblText = new JLabel(text, SwingConstants.CENTER);
+			lblText.setFont( new Font(Frame.getFontName(), Font.PLAIN, 25) );
+			pnlBase.add(lblText, BorderLayout.CENTER);
+			
+			setVisible(true);
+		} //생성자
+		
+		class MyMouseAdapter extends MouseAdapter {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
+				JButton btn = (JButton)e.getComponent();
+				btn.setBorder( new MatteBorder( 1, 1, 1, 1, Frame.getColorBorder() ) );
+			}
 
+			@Override
+			public void mouseExited(MouseEvent e) {
+				getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+				JButton btn = (JButton)e.getComponent();
+				btn.setBorder(null);
+			}
+		}
+		
+		@Override
+		public String getText() {
+			return text;
+		}
+	} //ImageButton 클래스
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		JButton btn = (JButton)e.getSource();
@@ -447,8 +505,8 @@ class WbAddDlg extends Dialogs implements ActionListener {
 			}
 			setModel(model);
 			setRenderer( new ColorRenderer() );
-			this.setOpaque(true);
-			this.setSelectedIndex(0);
+			setOpaque(true);
+			setSelectedIndex(0);
 		} //생성자
 		
 		@Override
@@ -460,9 +518,10 @@ class WbAddDlg extends Dialogs implements ActionListener {
 		@SuppressWarnings("rawtypes")
 		class ColorRenderer extends JLabel implements ListCellRenderer {
 			private static final long serialVersionUID = 1L;
+			
 			public ColorRenderer() {
-				this.setOpaque(true);
-				this.setPreferredSize( new Dimension(0, 30) );
+				setOpaque(true);
+				setPreferredSize( new Dimension(0, 30) );
 			}
 			
 			@Override
@@ -470,6 +529,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 					int index, boolean isSelected, boolean cellHasFocus) {
 				setBackground( (Color)value );
 				setText(" ");
+				setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
 				return this;
 			}
 		} //ColorRenderer 클래스
@@ -584,7 +644,6 @@ class WbAddDlg extends Dialogs implements ActionListener {
 				File file = new File(filePath);
 				String fileName = file.getName().split("\\.")[0];
 				
-				//TODO 파일 가져오기 & 문제집 메뉴 메인 리스트 초기화
 				//파일 불러오기
 				FileIO ob = new FileIO();
 				Workbook wb = ob.loadFile(filePath);
@@ -609,14 +668,15 @@ class WbAddDlg extends Dialogs implements ActionListener {
 
 class WbOptionDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
-	private final ImageIcon imageSolve = new ImageIcon("images/Workbook.png");
-	private final ImageIcon imageEdit = new ImageIcon("images");
-	private final ImageIcon imageExport = new ImageIcon("images");
-	private final ImageIcon imageInfo = new ImageIcon("images");
+	private final ImageIcon imageSolve = new ImageIcon("images/WbSolving.png");
+	private final ImageIcon imageEdit = new ImageIcon("images/WbEdit.png");
+	private final ImageIcon imageExport = new ImageIcon("images/WbExport.png");
+	private final ImageIcon imageInfo = new ImageIcon("images/Information.png");
 	
+	private Frame frame;
+	private Workbook wb;
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
-	private Workbook wb;
 	private ImageButton btnSolve = new ImageButton(imageSolve, "문제 풀이");
 	private ImageButton btnEdit = new ImageButton(imageEdit, "수정");
 	private ImageButton btnExport = new ImageButton(imageExport, "내보내기");
@@ -625,6 +685,7 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 	public WbOptionDlg(Frame frame, Workbook wb) {
 		super(frame, wb.getName(), 300, 300);
 		setMinimumSize( new Dimension(300, 300) );
+		this.frame = frame;
 		this.wb = wb;
 		lblTitle.setText( wb.getName(15) );
 		
@@ -641,9 +702,9 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 		setVisible(true);
 	} //생성자
 	
-	class ImageButton extends JButton implements MouseListener {
+	
+	class ImageButton extends JButton {
 		private static final long serialVersionUID = 1L;
-		private JPanel pnlBase = new JPanel();
 		private JLabel lblIcon;
 		private JLabel lblText = new JLabel("", SwingConstants.CENTER);
 		private String text = "";
@@ -654,7 +715,7 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 			setContentAreaFilled(false);
 			setPreferredSize( new Dimension(0, 60) );
 			setVisible(true);
-			addMouseListener(this);
+			addMouseListener( new MyMouseAdapter() );
 			this.text = text;
 			
 			JPanel pnlBase = new JPanel();
@@ -672,34 +733,29 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 			pnlBase.add(lblText, BorderLayout.CENTER);
 		}
 
-		@Override
-		public void mouseClicked(MouseEvent e) {}
+		private class MyMouseAdapter extends MouseAdapter {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
+				JButton btn = (JButton)e.getComponent();
+				btn.setBorder( new MatteBorder( 1, 1, 1, 1, Frame.getColorBorder() ) );
+			}
 
-		@Override
-		public void mousePressed(MouseEvent e) {}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {}
-
-		@Override
-		public void mouseEntered(MouseEvent e) {
-			getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
-			JButton btn = (JButton)e.getComponent();
-			btn.setBorder( new MatteBorder( 1, 1, 1, 1, Frame.getColorBorder() ) );
-		}
-
-		@Override
-		public void mouseExited(MouseEvent e) {
-			getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
-			JButton btn = (JButton)e.getComponent();
-			btn.setBorder(null);
-		}
+			@Override
+			public void mouseExited(MouseEvent e) {
+				getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+				JButton btn = (JButton)e.getComponent();
+				btn.setBorder(null);
+			}
+		} //MyMouseAdapter 클래스
+		
 		
 		@Override
 		public String getText() {
 			return text;
 		}
-	}
+	} //ImageButton 클래스
+	
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -707,6 +763,7 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 		if (e.getSource() == btnSolve) { //문제 풀이
 		}
 		else if (e.getSource() == btnEdit) { //수정
+			frame.setMenu("Question", wb);
 		}
 		else if (e.getSource() == btnExport) { //내보내기
 		}
@@ -716,4 +773,274 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 		System.out.println( ( (ImageButton)e.getSource() ).getText() );
 		this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 	}
-} //QOptionDlg 클래스
+} //WbOptionDlg 클래스
+
+
+class QuestionDlg extends Dialogs {
+	private static final long serialVersionUID = 1L;
+	
+	static final int idADD = 1;
+	static final int idEDIT = 2;
+	private final Font boldFont = new Font(Frame.getFontName(), Font.BOLD, 20);
+	private final ImageIcon imagePicture = new ImageIcon("images/Picture.png");
+	private final Image resizedImage = imagePicture.getImage().getScaledInstance(30, 30,
+			Image.SCALE_SMOOTH);
+	
+	private Frame frame;
+	private Workbook wb;
+	private JLabel lblTitle = getLabel();
+	private JPanel pnlCenter = new JPanel();
+	
+	private JLabel lblCategory = new JLabel("문제 유형", SwingConstants.LEFT);
+	private String[] aryCategory = { "선택형", "서술형" };
+	private MyComboBox cbCategory = new MyComboBox(aryCategory);
+	
+	private JLabel lblQuestion = new JLabel("문제");
+	private JTextField tfQuestion = new JTextField("");
+	private JButton btnPicture = new JButton("이미지 선택");
+	
+	private JLabel lblAnswer = new JLabel("정답");
+	private JTextField tfAnswer = new JTextField("");
+	
+	private JPanel pnlWrongAns = new JPanel();
+	private JLabel lblWrongAns = new JLabel("오답 선택지");
+	private ArrayList<JTextField> listWrongAns = new ArrayList<>();
+	
+	private JLabel lblExplain = new JLabel("해설");
+	private JTextField tfExplain = new JTextField("");
+	
+	private JButton btnAdd = new JButton("문제 추가");
+	private JButton btnEdit = new JButton("문제 수정");
+	
+	private MyMouseAdapter adapter = new MyMouseAdapter();
+
+	public QuestionDlg(Frame frame, Workbook wb, int type) {
+		super(frame, "", 400, 300);
+		this.frame = frame;
+		this.wb = wb;
+		
+		if (type == idADD) {
+			setTitle("문제 추가");
+			lblTitle.setText("문제 추가");
+		}
+		else {
+			setTitle("문제 수정");
+			lblTitle.setText("문제 수정");
+		}
+		
+		btnPicture.addMouseListener(adapter);
+		btnAdd.addMouseListener(adapter);
+		btnEdit.addMouseListener(adapter);
+		
+		add(pnlCenter, BorderLayout.CENTER);
+		pnlCenter.setLayout( new BoxLayout(pnlCenter, BoxLayout.Y_AXIS) );
+		pnlCenter.setBorder( BorderFactory.createEmptyBorder(10, 10, 10 ,10) );
+		
+		//문제 유형
+		addGroupLabel(pnlCenter, lblCategory);
+		addGap(5);
+		
+		cbCategory.setPreferredSize( new Dimension(400, 35) );
+		pnlCenter.add(cbCategory);
+		addGap(15);
+		
+		//문제
+		addGroupLabel(pnlCenter, lblQuestion);
+		addGap(5);
+		
+		addTextField(pnlCenter, tfQuestion);
+		addGap(5);
+		
+		//이미지 선택
+		btnPicture.setIcon( new ImageIcon(resizedImage) );
+		btnPicture.setFont( new Font(Frame.getFontName(), Font.BOLD, 15) );
+		btnPicture.setBackground( Frame.getColor() );
+		Border emptyBorder = BorderFactory.createEmptyBorder(3, 8, 3, 8);
+		Border lineBorder = BorderFactory.createLineBorder(Color.BLACK, 1, false);
+		btnPicture.setBorder( BorderFactory.createCompoundBorder(lineBorder, emptyBorder) );
+		JPanel pnlTemp = new JPanel();
+		pnlTemp.setLayout( new FlowLayout(FlowLayout.RIGHT, 0, 0) );
+		pnlTemp.add(btnPicture);
+		pnlCenter.add(pnlTemp);
+		addGap(10);
+		
+		//정답
+		addGroupLabel(pnlCenter, lblAnswer);
+		addGap(5);
+		
+		addTextField(pnlCenter, tfAnswer);
+		addGap(15);
+		
+		//오답 선택지
+		pnlWrongAns.setLayout( new BoxLayout(pnlWrongAns, BoxLayout.Y_AXIS) );
+		pnlWrongAns.setMinimumSize( new Dimension() );
+		pnlCenter.add(pnlWrongAns);
+		
+		if(cbCategory.getSelectedIndex() == 0) {
+			addGroupLabel(pnlWrongAns, lblWrongAns);
+			pnlWrongAns.add( Box.createRigidArea( new Dimension(0, 5) ) );
+			
+			JTextField tf = new JTextField("");
+			tf.setPreferredSize( new Dimension(400, 40) );
+			tf.setMinimumSize( new Dimension(400, 40) );
+			tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+			tf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+			listWrongAns.add(tf);
+			pnlWrongAns.add(tf);
+			pnlWrongAns.add( Box.createRigidArea( new Dimension(0, 15) ) );
+		}
+		
+		//해설
+		lblExplain.setFont(boldFont);
+		addGroupLabel(pnlCenter, lblExplain);
+		addGap(5);
+		
+		addTextField(pnlCenter, tfExplain);
+		addGap(15);
+		
+		//추가 버튼
+		JPanel pnlBtn = new JPanel();
+		pnlBtn.setLayout( new FlowLayout(FlowLayout.CENTER, 0, 0) );
+		pnlCenter.add(pnlBtn);
+		
+		if (type == idADD) {
+			btnAdd.setPreferredSize( new Dimension(150, 50) );
+			btnAdd.setFont(boldFont);
+			btnAdd.setBackground( Frame.getColor() );
+			btnAdd.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+			pnlBtn.add(btnAdd);
+		}
+		else {
+			btnEdit.setPreferredSize( new Dimension(150, 50) );
+			btnEdit.setFont(boldFont);
+			btnEdit.setBackground( Frame.getColor() );
+			btnEdit.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+			pnlBtn.add(btnEdit);
+		}
+		
+		pack();
+		setVisible(true);
+	} //생성자
+	
+	class MyComboBox extends JComboBox<String> implements ItemListener {
+		private static final long serialVersionUID = 1L;
+		private String[] aryItem;
+
+		@SuppressWarnings("unchecked")
+		public MyComboBox(String[] aryItem) {
+			super();
+			DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>();
+			this.aryItem = aryItem;
+			
+			for (String k : aryItem) {
+				model.addElement(k);
+			}
+			setBackground( Frame.getColor() );
+			setFont( new Font(Frame.getFontName(), Font.BOLD, 20) );
+			setModel(model);
+			setRenderer( new Renderer() );
+			setOpaque(true);
+			setSelectedIndex(0);
+			addItemListener(this);
+		} //생성자
+		
+		@Override
+		public void setSelectedItem(Object object) {
+			super.setSelectedItem(object);
+		}
+		
+		@SuppressWarnings("rawtypes")
+		class Renderer extends JLabel implements ListCellRenderer {
+			private static final long serialVersionUID = 1L;
+			
+			public Renderer() {
+				setOpaque(true);
+				setPreferredSize( new Dimension(0, 30) );
+			}
+			
+			@Override
+			public Component getListCellRendererComponent(JList list, Object value,
+					int index, boolean isSelected, boolean cellHasFocus) {
+				setText( " " + (String)value );
+				setFont( new Font(Frame.getFontName(), Font.PLAIN, 15) );
+				setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+				setBackground( Frame.getColor() );
+				return this;
+			}
+		} //Renderer 클래스
+		
+		public String getText() {
+			return aryItem[ getSelectedIndex() ];
+		}
+
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			if( e.getStateChange() == ItemEvent.SELECTED ) {
+				pnlWrongAns.removeAll();
+				
+				if(cbCategory.getSelectedIndex() == 0) {
+					addGroupLabel(pnlWrongAns, lblWrongAns);
+					pnlWrongAns.add( Box.createRigidArea( new Dimension(0, 5) ) );
+					
+					JTextField tf = new JTextField("");
+					tf.setPreferredSize( new Dimension(400, 40) );
+					tf.setMinimumSize( new Dimension(400, 40) );
+					tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+					tf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+					listWrongAns.add(tf);
+					pnlWrongAns.add(tf);
+					pnlWrongAns.add( Box.createRigidArea( new Dimension(0, 15) ) );
+				}
+				pnlCenter.validate();
+				pack();
+			}
+		}
+	} //MyComboBox 클래스
+	
+	
+	class MyMouseAdapter extends MouseAdapter {
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+		}
+	} //MyMouseAdapter 클래스
+	
+
+	//문제 추가
+	public static Question addQuestion(Frame frame, Workbook wb, int type) {
+		QuestionDlg ob = new QuestionDlg(frame, wb, type);
+		return null;
+	}
+	
+	//문제 수정
+	public static Question editQuestion(Frame frame, Workbook wb, int type) {
+		QuestionDlg ob = new QuestionDlg(frame, wb, type);
+		return null;
+	}
+	
+	private void addGap(int gap) {
+		pnlCenter.add( Box.createRigidArea( new Dimension(0, gap) ) );
+	}
+	
+	private void addGroupLabel(JPanel pnl, JLabel lbl) {
+		lbl.setFont(boldFont);
+		JPanel pnlTemp = new JPanel();
+		pnlTemp.setLayout( new GridLayout() );
+		pnlTemp.add(lbl);
+		pnl.add(pnlTemp);
+	}
+	
+	private void addTextField(JPanel pnl, JTextField tf) {
+		tf.setPreferredSize( new Dimension(400, 40) );
+		tf.setMinimumSize( new Dimension(400, 40) );
+		tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+		tf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+		pnl.add(tf);
+	}
+	
+} //QAddDlg 클래스
