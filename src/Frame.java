@@ -57,14 +57,13 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	private ArrayList<File> listWbFile;
 	private HashMap<WorkbookButton, File> hashMapWbFile = new HashMap<>();
 	private ArrayList<WorkbookButton> listWbBtn = new ArrayList<>();
-	private Workbook workbookBuffer = null;
+	private String filePathBuffer = "";
 	
 	public Frame() {
 		setTitle("나만의 문제집");
 		setSize(500, 700);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setMinimumSize( new Dimension(500, 700) );
-		
 		setIconImage( imageProgramIcon.getImage() );
 		
 		//프레임을 화면 정중앙에 위치
@@ -113,7 +112,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		pnlNorth.setPreferredSize( new Dimension(0, 70) );
 		pnlNorth.setLayout( new BorderLayout() );
 		
-		pnlNorth.add(lblMenuName, BorderLayout.WEST);
+		pnlNorth.add(lblMenuName, BorderLayout.CENTER);
 		lblMenuName.setFont( new Font(FONT_NAME, Font.BOLD, 30) );
 		
 		pnlNorth.add(pnlNorthEast, BorderLayout.EAST);
@@ -177,6 +176,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	
 	class WorkbookButton extends JButton implements ActionListener {
 		private static final long serialVersionUID = 1L;
+		private String filePath;
 		private Workbook wb = null;
 		
 		private JPanel pnlCenter = new JPanel();
@@ -184,8 +184,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		private JLabel lblName = new JLabel("", SwingConstants.CENTER);
 		private JLabel lblNumQuestion = new JLabel("", SwingConstants.CENTER);
 		
-		public WorkbookButton(Workbook wb) {
-			this.wb = wb;
+		public WorkbookButton(String filePath) {
+			this.filePath = filePath;
+			this.wb = FileIO.loadFile(filePath);
 			
 			setBackground(null);
 			setBorder(null);
@@ -211,7 +212,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			pnlBase.add(pnlCenter, BorderLayout.CENTER);
 			pnlCenter.setLayout( new GridLayout(2, 1, 0, 0) );
 			
-			String name = wb.getName(15);
+			String name = wb.getName();
 			lblName.setText(name);
 			lblName.setFont( new Font(FONT_NAME, Font.BOLD, 30) );
 			pnlCenter.add(lblName);
@@ -240,7 +241,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			new WbOptionDlg(frame, wb);
+			new WbOptionDlg(frame, filePath);
 		}
 	} //WorkbookButton 클래스
 	
@@ -269,16 +270,16 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		//문제 버튼
 		public QuestionButton(Workbook workbook, int index) {
 			init();
-			
 			this.workbook = workbook;
 			this.index = index;
-			setPreferredSize( new Dimension(0, 100) );
 			
 			JPanel pnlBase = new JPanel();
+			pnlBase.setBorder( BorderFactory.createEmptyBorder(5, 5, 5, 5) );
 			pnlBase.setLayout( new BorderLayout() );
-			pnlBase.setBorder( BorderFactory.createEmptyBorder(1, 0, 1, 0) );
+			add(pnlBase);
 			
-			JLabel lblIndex = new JLabel( Integer.toString(index) );
+			JLabel lblIndex = new JLabel(Integer.toString(index + 1) + ".", SwingConstants.CENTER);
+			lblIndex.setFont( new Font(FONT_NAME, Font.BOLD, 40) );
 			pnlBase.add(lblIndex, BorderLayout.WEST);
 			
 			JPanel pnlCenter = new JPanel();
@@ -303,7 +304,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		
 		//초기화
 		public void init() {
-			setBorder( BorderFactory.createEmptyBorder(5, 5, 5, 5) );
 			setBackground(null);
 			setContentAreaFilled(false);
 			setPreferredSize( new Dimension(0, 100) );
@@ -316,10 +316,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		@Override
 		public void actionPerformed(ActionEvent e) { //문제 버튼 클릭
 			if (workbook == null) { //문제 추가
-				QuestionDlg.addQuestion(frame, null, QuestionDlg.idADD);
+				QuestionDlg.addQuestion(frame, filePathBuffer, QuestionDlg.idADD);
 			}
 			else { //문제 수정
-				setMenu( "EditQuestion", workbook, workbook.getQuestion().get(index) );
+				setMenu("EditQuestion", filePathBuffer);
 			}
 		}
 	} //QuestionButton 클래스
@@ -379,12 +379,11 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		
 		//딕셔너리에 문제집 버튼 삽입
 		for (File file : listWbFile) {
-			FileIO fIO = new FileIO();
-			Workbook wb = fIO.loadFile( file.getPath() );
+			Workbook wb = FileIO.loadFile( file.getPath() );
 			
 			//검색 필터 적용
 			if (wb.getName().toLowerCase().startsWith( filter.toLowerCase() ) || filter == "") {
-				WorkbookButton wbBtn = new WorkbookButton(wb);
+				WorkbookButton wbBtn = new WorkbookButton( file.getPath() );
 				hashMapWbFile.put(wbBtn, file);
 				listWbBtn.add(wbBtn); //리스트에 문제집 버튼 삽입
 			}
@@ -457,10 +456,15 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	 * @param workbook - 문제집 구조체
 	 * @param question - 문제 구조체
 	*/
-	public void setMenu(String menu, Workbook workbook, Question question) {
+	public void setMenu(String menu, String filePath) {
 		c.setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
 		pnlNorthEast.removeAll();
 		pnlCenter.removeAll();
+		
+		Workbook workbook = null;
+		if ( filePath != null && !filePath.isEmpty() ) {
+			workbook = FileIO.loadFile(filePath);
+		}
 		
 		switch (menu) {
 			case "Workbook": default: //문제집 메뉴
@@ -493,7 +497,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				lblMenuName.setText(" 설정");
 				break;
 			case "Question": //[문제집] - 문제 메뉴
-				lblMenuName.setText( " " + workbook.getName(20) );
+				lblMenuName.setText( " " + workbook.getName() );
 				pnlNorthEast.add(btnRevert);
 				
 				pnlCenter.add(sPnl, BorderLayout.CENTER);
@@ -516,22 +520,14 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				break;
 		} //switch()
 		
-		this.workbookBuffer = workbook;
 		c.repaint();
+		this.filePathBuffer = filePath;
 		strMenu = menu;
 		System.out.println(menu);
 	} //setMenu()
 	
-	public void setMenu(String menu, Workbook workbook) {
-		setMenu(menu, workbook, null);
-	}
-	
-	public void setMenu(String menu, Question question) {
-		setMenu(menu, null, question);
-	}
-	
 	public void setMenu(String menu) {
-		setMenu(menu, null, null);
+		setMenu(menu, null);
 	}
 	
 	
@@ -555,7 +551,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				break;
 			case "AddQuestion": //문제 추가
 				if ( source.equals(btnRevert) ) { //되돌릭
-					setMenu("Question", workbookBuffer);
+					setMenu("Question", filePathBuffer);
 				}
 				break;
 		}
