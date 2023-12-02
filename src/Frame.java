@@ -513,7 +513,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				pnlScroll.removeAll();
 				pnlScroll.setLayout( new BoxLayout(pnlScroll, BoxLayout.Y_AXIS) );
 				
-				
 				break;
 		} //switch()
 		

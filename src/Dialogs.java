@@ -671,6 +671,7 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 	private final ImageIcon imageSolve = new ImageIcon("images/WbSolving.png");
 	private final ImageIcon imageEdit = new ImageIcon("images/WbEdit.png");
 	private final ImageIcon imageExport = new ImageIcon("images/WbExport.png");
+	private final ImageIcon imageDelete = new ImageIcon("images/Delete.png");
 	private final ImageIcon imageInfo = new ImageIcon("images/Information.png");
 	
 	private Frame frame;
@@ -680,6 +681,7 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 	private ImageButton btnSolve = new ImageButton(imageSolve, "문제 풀이");
 	private ImageButton btnEdit = new ImageButton(imageEdit, "수정");
 	private ImageButton btnExport = new ImageButton(imageExport, "내보내기");
+	private ImageButton btnDelete = new ImageButton(imageDelete, "삭제");
 	private ImageButton btnInfo = new ImageButton(imageInfo, "정보");
 
 	public WbOptionDlg(Frame frame, Workbook wb) {
@@ -690,9 +692,9 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 		lblTitle.setText( wb.getName(15) );
 		
 		add(pnlCenter, BorderLayout.CENTER);
-		pnlCenter.setLayout( new GridLayout(4, 1, 0, 0) );
+		pnlCenter.setLayout( new GridLayout(5, 1, 0, 0) );
 		
-		ImageButton[] aryBtn = { btnSolve, btnEdit, btnExport, btnInfo };
+		ImageButton[] aryBtn = { btnSolve, btnEdit, btnExport, btnDelete, btnInfo };
 		for (ImageButton k : aryBtn) {
 			pnlCenter.add(k);
 			k.addActionListener(this);
