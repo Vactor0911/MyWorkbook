@@ -2,9 +2,12 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.filechooser.FileSystemView;
 
 import java.awt.event.*;
 import java.io.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 class MessageBox extends JDialog implements ActionListener {
@@ -422,7 +425,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 	private JLabel lblNewTitle = new JLabel("제목");
 	private JHintTextField tfNewTitle = new JHintTextField("  제목을 입력하세요");
 	private JLabel lblNewColor = new JLabel("색상");
-	private JColorComboBox cbColor = new JColorComboBox();
+	private ColorComboBox cbColor = new ColorComboBox();
 	private JButton btnNewOk = new JButton("문제집 만들기");
 	private JLabel lblLoad = new JLabel("불러오기");
 	private JButton btnLoad = new JButton("파일 가져오기");
@@ -509,61 +512,6 @@ class WbAddDlg extends Dialogs implements ActionListener {
 	} //생성자
 	
 	
-	class JColorComboBox extends JComboBox<Color> {
-		private static final long serialVersionUID = 1L;
-		private Color[] aryColor = {
-			new Color(244, 153, 192),
-			new Color(247, 148, 30),
-			new Color(255, 247, 154),
-			new Color(171, 211, 116),
-			new Color(109, 207, 246),
-		};
-
-		@SuppressWarnings("unchecked")
-		public JColorComboBox() {
-			super();
-			DefaultComboBoxModel<Color> model = new DefaultComboBoxModel<Color>();
-			
-			for (Color color : aryColor) {
-				model.addElement(color);
-			}
-			setModel(model);
-			setRenderer( new ColorRenderer() );
-			setOpaque(true);
-			setSelectedIndex(0);
-		} //생성자
-		
-		@Override
-		public void setSelectedItem(Object object) {
-			super.setSelectedItem(object);
-			setBackground( (Color)object );
-		}
-		
-		@SuppressWarnings("rawtypes")
-		class ColorRenderer extends JLabel implements ListCellRenderer {
-			private static final long serialVersionUID = 1L;
-			
-			public ColorRenderer() {
-				setOpaque(true);
-				setPreferredSize( new Dimension(0, 30) );
-			}
-			
-			@Override
-			public Component getListCellRendererComponent(JList list, Object value,
-					int index, boolean isSelected, boolean cellHasFocus) {
-				setBackground( (Color)value );
-				setText(" ");
-				setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
-				return this;
-			}
-		} //ColorRenderer 클래스
-		
-		public Color getColor() {
-			return aryColor[ getSelectedIndex() ];
-		}
-	} //JColorComboBox 클래스
-	
-	
 	class JHintTextField extends JTextField implements FocusListener {
 		private static final long serialVersionUID = 1L;
 		private String hint;
@@ -636,7 +584,9 @@ class WbAddDlg extends Dialogs implements ActionListener {
 				return;
 			}
 			
-			String fileName = tfNewTitle.getText();
+			String fileName = LocalDate.now( ) + "_" + LocalTime.now().toString().split("\\.")[0];
+			fileName = fileName.replace("-", "_");
+			fileName = fileName.replace(":", "_");
 			Color fileColor = cbColor.getColor();
 			
 			//파일 새로 생성
@@ -644,7 +594,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 	    	String folderPath = Frame.getFolderPath() + separator + "Workbooks";
 	    	String filePath = folderPath + separator + fileName + ".workbook";
 	    	
-    		Workbook wb = new Workbook(fileName, fileColor);
+    		Workbook wb = new Workbook( tfNewTitle.getText().trim() , fileColor);
     		FileIO.saveFile(filePath, wb);
         	MessageBox.show(this, "문제집을 성공적으로 생성했습니다!");
         	
@@ -652,10 +602,12 @@ class WbAddDlg extends Dialogs implements ActionListener {
 	    	this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 		}
 		else if (e.getSource() == btnLoad) { //불러오기
+			UIManager.put("FileChooser.cancelButtonText","취소");
 			JFileChooser jfc = new JFileChooser();
 			jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			jfc.setAcceptAllFileFilterUsed(false);
 			jfc.setFileHidingEnabled(true);
+			jfc.setApproveButtonText("열기");
 			FileNameExtensionFilter filter = new FileNameExtensionFilter("문제집 파일 (*.workbook)",
 					"workbook");
 			jfc.setFileFilter(filter);
@@ -788,11 +740,34 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		//TODO 버튼 클릭 이벤트 기능 구현
 		if (e.getSource() == btnSolve) { //문제 풀이
+			//TODO 문제 풀이 구현
 		}
 		else if (e.getSource() == btnEdit) { //문제 수정
 			frame.setMenu("Question", filePath);
 		}
 		else if (e.getSource() == btnExport) { //내보내기
+			UIManager.put("FileChooser.cancelButtonText","취소");
+			JFileChooser jfc = new JFileChooser();
+			jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			jfc.setAcceptAllFileFilterUsed(false);
+			jfc.setFileHidingEnabled(true);
+			jfc.setCurrentDirectory( FileSystemView.getFileSystemView().getHomeDirectory() );
+			jfc.setApproveButtonText("저장");
+			
+			int result = jfc.showOpenDialog(null); //파일 선택기 열기
+			
+			if (result == JFileChooser.APPROVE_OPTION) { //파일이 정상적으로 선택됨
+				String folderPath = jfc.getSelectedFile().toString();
+				String fileName = LocalDate.now( ) + "_" + LocalTime.now().toString().split("\\.")[0];
+				fileName = fileName.replace("-", "_");
+				fileName = fileName.replace(":", "_");
+				String filePath = folderPath + File.separator + fileName + ".workbook";
+				FileIO.saveFile(filePath, wb);
+				
+				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
+				MessageBox.show(frame, "문제집이 성공적으로 내보내졌습니다!");
+				return;
+			}
 		}
 		else if (e.getSource() == btnDelete) { //삭제
 			if ( MessageBox.show(this, "문제집을 삭제하시겠습니까?", MessageBox.btnYES_NO,
@@ -807,12 +782,169 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 			}
 		}
 		else if (e.getSource() == btnInfo) { //정보
+			this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
+			new WbInfoDlg(frame, filePath);
+			return;
 		}
-		
-		System.out.println( ( (ImageButton)e.getSource() ).getText() );
 		this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 	}
 } //WbOptionDlg 클래스
+
+
+class WbInfoDlg extends Dialogs implements ActionListener {
+	private static final long serialVersionUID = 1L;
+	private final Font boldFont = new Font(Frame.getFontName(), Font.BOLD, 20);
+	
+	private Frame frame;
+	private String filePath;
+	
+	private JLabel lblTitle = getLabel();
+	private JPanel pnlCenter = new JPanel();
+	private Workbook wb;
+	
+	private JLabel lblName = new JLabel("이름");
+	private HintTextField tfName = new HintTextField("제목을 입력하세요");
+	
+	private JLabel lblColor = new JLabel("색상");
+	private JTextField tfColor = new JTextField("");
+	private ColorComboBox cbColor = new ColorComboBox();
+	
+	private JLabel lblDate = new JLabel("생성 날짜");
+	private JTextField tfDate = new JTextField("");
+	
+	private JButton btnEdit = new JButton("수정");
+	private JButton btnOk = new JButton("확인");
+	private JButton btnCancel = new JButton("취소");
+
+	public WbInfoDlg(Frame frame, String filePath) {
+		super(frame, "", 400, 300);
+		this.frame = frame;
+		this.filePath = filePath;		
+		this.wb = FileIO.loadFile(filePath);
+		lblTitle.setText( wb.getName() );
+		addWindowListener( new MyWindowAdapter() );
+		
+		pnlCenter.setLayout( new BoxLayout(pnlCenter, BoxLayout.Y_AXIS) );
+		pnlCenter.setBorder( BorderFactory.createEmptyBorder(10, 10, 10, 10) );
+		add(pnlCenter, BorderLayout.CENTER);
+		
+		addGroupLabel(pnlCenter, lblName);
+		addGap(5);
+		
+		addTextField(pnlCenter, tfName);
+		tfName.setText( wb.getName() );
+		tfName.setEditable(false);
+		addGap(15);
+		
+		addGroupLabel(pnlCenter, lblColor);
+		addGap(5);
+		
+		pnlCenter.add(tfColor);
+		tfColor.setEditable(false);
+		tfColor.setPreferredSize( new Dimension(300, 40) );
+		tfColor.setMinimumSize( new Dimension(300, 40) );
+		tfColor.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+		tfColor.setBackground( wb.getColor() );
+		
+		pnlCenter.add(cbColor);
+		cbColor.setVisible(false);
+		addGap(15);
+		
+		addGroupLabel(pnlCenter, lblDate);
+		addTextField(pnlCenter, tfDate);
+		tfDate.setEditable(false);
+		String date = new File(filePath).getName();
+		date = date.split("\\.")[0];
+		String[] aryDate = date.split("_");
+		date = aryDate[0] + "-" + aryDate[1] + "-" + aryDate[2] + "   " + aryDate[3]
+				+ ":" + aryDate[4] + ":" + aryDate[5];
+		tfDate.setText(date);
+		addGap(15);
+		
+		JPanel pnlBtn = new JPanel();
+		pnlBtn.setLayout( new FlowLayout(FlowLayout.CENTER, 10, 0) );
+		pnlCenter.add(pnlBtn);
+		
+		JButton[] aryBtn = { btnEdit, btnOk, btnCancel };
+		for (JButton btn : aryBtn) {
+			btn.setPreferredSize( new Dimension(100, 50) );
+			btn.setFont(boldFont);
+			btn.setBackground( Frame.getColor() );
+			btn.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+			btn.addActionListener(this);
+			pnlBtn.add(btn);
+		}
+		btnOk.setVisible(false);
+		btnCancel.setVisible(false);
+		
+		pack();
+		moveToMid();
+		setVisible(true);
+	} //생성자
+	
+	class MyWindowAdapter extends WindowAdapter {
+		@Override
+		public void windowClosed(WindowEvent e) {
+			new WbOptionDlg(frame, filePath);
+		}
+	}
+	
+	//그룹 라벨 추가
+	private void addGroupLabel(JPanel pnl, JLabel lbl) {
+		lbl.setFont(boldFont);
+		JPanel pnlTemp = new JPanel();
+		pnlTemp.setLayout( new GridLayout() );
+		pnlTemp.add(lbl);
+		pnl.add(pnlTemp);
+	}
+	
+	//텍스트 필드 추가
+	private void addTextField(JPanel pnl, JTextField tf) {
+		tf.setPreferredSize( new Dimension(300, 40) );
+		tf.setMinimumSize( new Dimension(300, 40) );
+		tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+		tf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+		pnl.add(tf);
+	}
+	
+	//공백 추가
+	private void addGap(int gap) {
+		pnlCenter.add( Box.createRigidArea( new Dimension(0, gap) ) );
+	}
+	
+	private void setEdit(boolean edit) {
+		btnEdit.setVisible(edit);
+		btnOk.setVisible(!edit);
+		btnCancel.setVisible(!edit);
+		
+		tfName.setEditable(!edit);
+		tfColor.setVisible(edit);
+		cbColor.setVisible(!edit);
+		validate();
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == btnEdit) { //수정
+			setEdit(false);
+			cbColor.setSelectedIndex( cbColor.getColorIndex( wb.getColor() ) );
+		}
+		else if (e.getSource() == btnOk) { //확인
+			if ( MessageBox.show(frame, "문제집 정보를 수정하시겠습니까?", MessageBox.btnYES_NO,
+					MessageBox.iconQUESTION) == MessageBox.idYES ) {
+				setEdit(true);
+				wb.setName( tfName.getText().trim() );
+				wb.setColor( cbColor.getColor() );
+				FileIO.saveFile(filePath, wb);
+				lblTitle.setText( wb.getName() );
+				frame.reloadWb();
+			}
+		}
+		else { //취소
+			setEdit(true);
+		}
+	}
+} //WbInfoDlg 클래스
 
 
 class QuestionDlg extends Dialogs implements ActionListener {
@@ -1199,10 +1331,10 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			
 			//오답 선택지
 			String[] aryOption = null;
-			String option = listOption.get(0).getText().trim();
-			listOption.get(0).warn( option.isEmpty() );
-			
 			if (category == 0) { //문제 형식이 '선택식'일 경우
+				String option = listOption.get(0).getText().trim();
+				listOption.get(0).warn( option.isEmpty() );
+			
 				aryOption = new String[ listOption.size() ];
 				for (int i=0; i<listOption.size(); i++) {
 					String strOption = listOption.get(i).getText();
@@ -1213,9 +1345,13 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			}
 			
 			//부적절한 입력시 종료
-			if ( title.isEmpty() || answer.isEmpty() || 
-					( listOption.get(0).getText().isEmpty() && category == 0 ) ) {
+			if ( title.isEmpty() || answer.isEmpty() ) {
 				return;
+			}
+			if (category == 0) {
+				if ( listOption.get(0).getText().isEmpty() ) {
+					return;
+				}
 			}
 			
 			//해설
@@ -1229,14 +1365,14 @@ class QuestionDlg extends Dialogs implements ActionListener {
 				wb.getQuestion().remove(index);
 				wb.getQuestion().add(index, q);
 			}
-			FileIO.saveFile(filePath, wb, true); //생성한 데이터 덮어쓰기
+			FileIO.saveFile(filePath, wb); //생성한 데이터 덮어쓰기
 			frame.setMenu("Question", filePath); //문제 불러오기
 		}
 		else if (e.getSource() == btnDelete) { //문제 삭제
 			if ( MessageBox.show(this, "문제를 삭제하시겠습니까?", MessageBox.btnYES_NO,
 					MessageBox.iconQUESTION) == MessageBox.idYES ) {
 				wb.getQuestion().remove(index);
-				FileIO.saveFile(filePath, wb, true); //생성한 데이터 덮어쓰기
+				FileIO.saveFile(filePath, wb); //생성한 데이터 덮어쓰기
 				frame.setMenu("Question", filePath); //문제 불러오기
 			}
 		}

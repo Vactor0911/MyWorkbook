@@ -4,7 +4,6 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
 import javax.swing.border.*;
 import java.io.*;
 
@@ -506,6 +505,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				break;
 		} //switch()
 		
+		c.repaint();
 		c.validate();
 		this.filePathBuffer = filePath;
 		strMenu = menu;
