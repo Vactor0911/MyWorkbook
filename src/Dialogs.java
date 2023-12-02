@@ -273,23 +273,19 @@ public class Dialogs extends JDialog {
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setResizable(false);
 		
-		//대화상자를 화면 정중앙에 위치
-		Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
-		int x = res.width / 2 - width / 2;
-		int y = res.height / 2 - height / 2;
-		setLocation(x, y);
+		moveToMid(); //대화상자를 화면 정중앙에 위치
 		
 		Container c = getContentPane();
 		c.setLayout( new BorderLayout() );
 		
 		c.add(pnlNorth, BorderLayout.NORTH);
-		pnlNorth.setLayout( new FlowLayout(FlowLayout.CENTER, 0, 5) );
+		pnlNorth.setLayout( new GridLayout() );
 		pnlNorth.setBackground( Frame.getColor() );
 		pnlNorth.setBorder( new MatteBorder( 0, 0, 2, 0, Frame.getColorBorder() ) );
 		pnlNorth.setPreferredSize( new Dimension(0, 50) );
-		pnlNorth.add(lblTitle);
 		
 		lblTitle.setFont( new Font(Frame.getFontName(), Font.BOLD, 26) );
+		pnlNorth.add(lblTitle);
 	} //생성자
 	
 	
@@ -300,6 +296,14 @@ public class Dialogs extends JDialog {
 	
 	public JLabel getLabel() {
 		return lblTitle;
+	}
+	
+	//대화상자를 화면 정중앙에 위치
+	public void moveToMid() {
+		Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
+		int x = res.width / 2 - getWidth() / 2;
+		int y = res.height / 2 - getHeight() / 2;
+		setLocation(x, y);
 	}
 }//Dialogs 클래스
 
@@ -641,8 +645,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 	    	String filePath = folderPath + separator + fileName + ".workbook";
 	    	
     		Workbook wb = new Workbook(fileName, fileColor);
-    		FileIO ob = new FileIO();
-        	ob.saveFile(filePath, wb);
+    		FileIO.saveFile(filePath, wb);
         	MessageBox.show(this, "문제집을 성공적으로 생성했습니다!");
         	
         	frame.reloadWb();
@@ -665,14 +668,13 @@ class WbAddDlg extends Dialogs implements ActionListener {
 				String fileName = file.getName().split("\\.")[0];
 				
 				//파일 불러오기
-				FileIO ob = new FileIO();
-				Workbook wb = ob.loadFile(filePath);
+				Workbook wb = FileIO.loadFile(filePath);
 				
 				//불러온 파일 Workbooks 폴더에 복사
 				String separator = File.separator;
 		    	String folderPath = Frame.getFolderPath() + separator + "Workbooks";
 		    	filePath = folderPath + separator + fileName + ".workbook";
-				ob.saveFile(filePath, wb);
+		    	FileIO.saveFile(filePath, wb);
 				MessageBox.show(this, "문제집을 성공적으로 불러왔습니다!");
 				
 				frame.reloadWb();
@@ -695,7 +697,7 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 	private final ImageIcon imageInfo = new ImageIcon("images/Information.png");
 	
 	private Frame frame;
-	private File file;
+	private String filePath;
 	private Workbook wb;
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
@@ -705,15 +707,14 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 	private ImageButton btnDelete = new ImageButton(imageDelete, "삭제");
 	private ImageButton btnInfo = new ImageButton(imageInfo, "정보");
 
-	public WbOptionDlg(Frame frame, File file) {
+	public WbOptionDlg(Frame frame, String filePath) {
 		super(frame, "", 300, 300);
 		setMinimumSize( new Dimension(300, 300) );
 		this.frame = frame;
-		this.file = file;
-		FileIO fIO = new FileIO();
-		this.wb = fIO.loadFile( file.getPath() );
+		this.filePath = filePath;
+		this.wb = FileIO.loadFile(filePath);
 		setTitle( wb.getName() );
-		lblTitle.setText( wb.getName(15) );
+		lblTitle.setText( wb.getName() );
 		
 		add(pnlCenter, BorderLayout.CENTER);
 		pnlCenter.setLayout( new GridLayout(5, 1, 0, 0) );
@@ -789,13 +790,14 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 		if (e.getSource() == btnSolve) { //문제 풀이
 		}
 		else if (e.getSource() == btnEdit) { //문제 수정
-			frame.setMenu("Question", wb);
+			frame.setMenu("Question", filePath);
 		}
 		else if (e.getSource() == btnExport) { //내보내기
 		}
 		else if (e.getSource() == btnDelete) { //삭제
 			if ( MessageBox.show(this, "문제집을 삭제하시겠습니까?", MessageBox.btnYES_NO,
 					MessageBox.iconQUESTION) == MessageBox.idYES ) {
+				File file = new File(filePath);
 				file.delete();
 				frame.reloadWb();
 				MessageBox.show(this, "문제집이 성공적으로 삭제되었습니다.");
@@ -813,7 +815,7 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 } //WbOptionDlg 클래스
 
 
-class QuestionDlg extends Dialogs {
+class QuestionDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	
 	static final int idADD = 1;
@@ -824,6 +826,7 @@ class QuestionDlg extends Dialogs {
 			Image.SCALE_SMOOTH);
 	
 	private Frame frame;
+	private String filePath;
 	private Workbook wb;
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
@@ -833,28 +836,33 @@ class QuestionDlg extends Dialogs {
 	private MyComboBox cbCategory = new MyComboBox(aryCategory);
 	
 	private JLabel lblQuestion = new JLabel("문제");
-	private JTextField tfQuestion = new JTextField("");
+	private HintTextField tfTitle = new HintTextField("문제를 입력하세요");
 	private JButton btnPicture = new JButton("이미지 선택");
+	private JLabel lblPicture = new JLabel();
 	
 	private JLabel lblAnswer = new JLabel("정답");
-	private JTextField tfAnswer = new JTextField("");
+	private HintTextField tfAnswer = new HintTextField("정답을 입력하세요");
 	
-	private JPanel pnlWrongAns = new JPanel();
+	private JPanel pnlOption = new JPanel();
 	private JLabel lblWrongAns = new JLabel("오답 선택지");
-	private ArrayList<JTextField> listWrongAns = new ArrayList<>();
+	private ArrayList<HintTextField> listOption = new ArrayList<>();
 	
 	private JLabel lblExplain = new JLabel("해설");
-	private JTextField tfExplain = new JTextField("");
+	private HintTextField tfExplain = new HintTextField("해설을 입력하세요 (선택)");
 	
-	private JButton btnAdd = new JButton("문제 추가");
-	private JButton btnEdit = new JButton("문제 수정");
+	private JButton btnAdd = new JButton("추가하기");
+	private JButton btnEdit = new JButton("수정하기");
+	private JButton btnDelete = new JButton("삭제하기");
 	
-	private MyMouseAdapter adapter = new MyMouseAdapter();
+	private MyMouseAdapter mouseAdapter = new MyMouseAdapter();
+	private MyKeyAdapter keyAdapter = new MyKeyAdapter();
+	private ImageIcon image;
 
-	public QuestionDlg(Frame frame, Workbook wb, int type) {
+	public QuestionDlg(Frame frame, String filePath, int type) {
 		super(frame, "", 400, 300);
 		this.frame = frame;
-		this.wb = wb;
+		this.filePath = filePath;
+		this.wb = FileIO.loadFile(filePath);
 		
 		if (type == idADD) {
 			setTitle("문제 추가");
@@ -865,9 +873,11 @@ class QuestionDlg extends Dialogs {
 			lblTitle.setText("문제 수정");
 		}
 		
-		btnPicture.addMouseListener(adapter);
-		btnAdd.addMouseListener(adapter);
-		btnEdit.addMouseListener(adapter);
+		JButton[] aryBtn = { btnPicture, btnAdd, btnEdit, btnDelete };
+		for (JButton btn : aryBtn) {
+			btn.addActionListener(this);
+			btn.addMouseListener(mouseAdapter);
+		}
 		
 		add(pnlCenter, BorderLayout.CENTER);
 		pnlCenter.setLayout( new BoxLayout(pnlCenter, BoxLayout.Y_AXIS) );
@@ -885,7 +895,7 @@ class QuestionDlg extends Dialogs {
 		addGroupLabel(pnlCenter, lblQuestion);
 		addGap(5);
 		
-		addTextField(pnlCenter, tfQuestion);
+		addTextField(pnlCenter, tfTitle);
 		addGap(5);
 		
 		//이미지 선택
@@ -896,7 +906,8 @@ class QuestionDlg extends Dialogs {
 		Border lineBorder = BorderFactory.createLineBorder(Color.BLACK, 1, false);
 		btnPicture.setBorder( BorderFactory.createCompoundBorder(lineBorder, emptyBorder) );
 		JPanel pnlTemp = new JPanel();
-		pnlTemp.setLayout( new FlowLayout(FlowLayout.RIGHT, 0, 0) );
+		pnlTemp.setLayout( new FlowLayout(FlowLayout.RIGHT, 10, 0) );
+		pnlTemp.add(lblPicture);
 		pnlTemp.add(btnPicture);
 		pnlCenter.add(pnlTemp);
 		addGap(10);
@@ -909,23 +920,24 @@ class QuestionDlg extends Dialogs {
 		addGap(15);
 		
 		//오답 선택지
-		pnlWrongAns.setLayout( new BoxLayout(pnlWrongAns, BoxLayout.Y_AXIS) );
-		pnlWrongAns.setMinimumSize( new Dimension() );
-		pnlCenter.add(pnlWrongAns);
+		pnlOption.setLayout( new BoxLayout(pnlOption, BoxLayout.Y_AXIS) );
+		pnlOption.setMinimumSize( new Dimension() );
+		pnlCenter.add(pnlOption);
 		
 		if(cbCategory.getSelectedIndex() == 0) {
-			addGroupLabel(pnlWrongAns, lblWrongAns);
-			pnlWrongAns.add( Box.createRigidArea( new Dimension(0, 5) ) );
+			addGroupLabel(pnlOption, lblWrongAns);
+			pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
 			
-			JTextField tf = new JTextField("");
+			HintTextField tf = new HintTextField("오답을 입력하세요");
 			tf.setPreferredSize( new Dimension(400, 40) );
 			tf.setMinimumSize( new Dimension(400, 40) );
 			tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
 			tf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
-			listWrongAns.add(tf);
-			pnlWrongAns.add(tf);
-			pnlWrongAns.add( Box.createRigidArea( new Dimension(0, 15) ) );
+			tf.addKeyListener(keyAdapter);
+			listOption.add(tf);
+			pnlOption.add(tf);
 		}
+		addGap(15);
 		
 		//해설
 		lblExplain.setFont(boldFont);
@@ -1013,21 +1025,7 @@ class QuestionDlg extends Dialogs {
 		@Override
 		public void itemStateChanged(ItemEvent e) {
 			if( e.getStateChange() == ItemEvent.SELECTED ) {
-				pnlWrongAns.removeAll();
-				
-				if(cbCategory.getSelectedIndex() == 0) {
-					addGroupLabel(pnlWrongAns, lblWrongAns);
-					pnlWrongAns.add( Box.createRigidArea( new Dimension(0, 5) ) );
-					
-					JTextField tf = new JTextField("");
-					tf.setPreferredSize( new Dimension(400, 40) );
-					tf.setMinimumSize( new Dimension(400, 40) );
-					tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
-					tf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
-					listWrongAns.add(tf);
-					pnlWrongAns.add(tf);
-					pnlWrongAns.add( Box.createRigidArea( new Dimension(0, 15) ) );
-				}
+				pnlOption.setVisible(cbCategory.getSelectedIndex() == 0);
 				pnlCenter.validate();
 				pack();
 			}
@@ -1047,23 +1045,32 @@ class QuestionDlg extends Dialogs {
 		}
 	} //MyMouseAdapter 클래스
 	
+	
+	class MyKeyAdapter extends KeyAdapter {
+		@Override
+		public void keyReleased(KeyEvent e) {
+			System.out.println(listOption.get(0).getText());
+			drawOption();
+		}
+	} //MyKeydapter 클래스
+	
 
 	//문제 추가
-	public static Question addQuestion(Frame frame, Workbook wb, int type) {
-		QuestionDlg ob = new QuestionDlg(frame, wb, type);
-		return null;
+	public static void addQuestion(Frame frame, String filePath, int type) {
+		new QuestionDlg(frame, filePath, type);
 	}
 	
 	//문제 수정
-	public static Question editQuestion(Frame frame, Workbook wb, int type) {
-		QuestionDlg ob = new QuestionDlg(frame, wb, type);
-		return null;
+	public static void editQuestion(Frame frame, String filePath, int type) {
+		new QuestionDlg(frame, filePath, type);
 	}
 	
+	//공백 추가
 	private void addGap(int gap) {
 		pnlCenter.add( Box.createRigidArea( new Dimension(0, gap) ) );
 	}
 	
+	//그룹 라벨 추가
 	private void addGroupLabel(JPanel pnl, JLabel lbl) {
 		lbl.setFont(boldFont);
 		JPanel pnlTemp = new JPanel();
@@ -1072,12 +1079,127 @@ class QuestionDlg extends Dialogs {
 		pnl.add(pnlTemp);
 	}
 	
+	//텍스트 필드 추가
 	private void addTextField(JPanel pnl, JTextField tf) {
 		tf.setPreferredSize( new Dimension(400, 40) );
 		tf.setMinimumSize( new Dimension(400, 40) );
 		tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
 		tf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
 		pnl.add(tf);
+	}
+	
+	private void drawOption() {
+		boolean flagAdd = false;
+		for (int i=listOption.size()-1; i>=0; i--) {
+			if (i == listOption.size() - 1) {
+				if ( !listOption.get(i).getText().isEmpty() ) {
+					flagAdd = true;
+				}
+			}
+			if (i > 0) {
+				if ( listOption.get(i-1).getText().isEmpty() ) {
+					listOption.remove(i);
+					pnlOption.remove( (i+1) * 2);
+					pnlOption.remove( (i+1) * 2 - 1);
+				}
+			}
+		}
+		
+		if (flagAdd && listOption.size() <= 4) {
+			pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
+			HintTextField htf = new HintTextField("오답을 입력하세요 (선택)");
+			htf.setPreferredSize( new Dimension(400, 40) );
+			htf.setMinimumSize( new Dimension(400, 40) );
+			htf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+			htf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+			htf.addKeyListener(keyAdapter);
+			listOption.add(htf);
+			pnlOption.add(htf);
+		}
+		pnlOption.validate();
+		pack();
+	}
+	
+	@Override
+	public void pack() {
+		super.pack();
+		moveToMid();
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == btnAdd) { //문제 추가
+			//문제 유형
+			int category = cbCategory.getSelectedIndex();
+			
+			//문제
+			String title = tfTitle.getText().trim();
+			tfTitle.warn( title.isEmpty() );
+			
+			//정답
+			String answer = tfAnswer.getText().trim();
+			tfAnswer.warn( answer.isEmpty() );
+			
+			//오답 선택지
+			String[] aryOption = null;
+			String option = listOption.get(0).getText().trim();
+			listOption.get(0).warn( option.isEmpty() );
+			
+			if (category == 0) { //문제 형식이 '선택식'일 경우
+				aryOption = new String[listOption.size()];
+				for (int i=0; i<aryOption.length; i++) {
+					if ( !option.isEmpty() ) {
+						aryOption[i] = option;
+					}
+				}
+			}
+			
+			//부적절한 입력시 종료
+			if ( title.isEmpty() || answer.isEmpty() || 
+					( listOption.get(0).getText().isEmpty() && category == 0 ) ) {
+				return;
+			}
+			
+			//해설
+			String explain = tfExplain.getText();
+			
+			Question q = new Question(category, title, answer, aryOption, explain, image);
+			wb.getQuestion().add(q);
+			FileIO.saveFile(filePath, wb, true); //생성한 데이터 덮어쓰기
+			frame.setMenu("Question", filePath); //문제 불러오기
+		}
+		else if (e.getSource() == btnEdit) { //문제 수정
+			
+		}
+		else if (e.getSource() == btnDelete) { //문제 삭제
+			
+		}
+		else { //이미지 선택
+			JFileChooser jfc = new JFileChooser();
+			jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			jfc.setAcceptAllFileFilterUsed(false);
+			jfc.setFileHidingEnabled(true);
+			FileNameExtensionFilter filter = new FileNameExtensionFilter(
+					"이미지 파일 (*.jpg, *.jpeg, *.png)", "jpg", "jpeg", "png");
+			jfc.setFileFilter(filter);
+			
+			int result = jfc.showOpenDialog(null); //파일 선택기 열기
+			
+			if (result == JFileChooser.APPROVE_OPTION) { //파일이 정상적으로 선택됨
+				String imagePath = jfc.getSelectedFile().toString();
+				ImageIcon imageIcon = new ImageIcon(imagePath);
+				Image resizedImage = imageIcon.getImage().getScaledInstance(100, 100,
+						Image.SCALE_SMOOTH);
+				image = new ImageIcon(resizedImage);
+				
+				lblPicture.setIcon(image);
+				pnlCenter.validate();
+				pack();
+			}
+			return;
+		}
+		
+		this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
 	}
 	
 } //QAddDlg 클래스
