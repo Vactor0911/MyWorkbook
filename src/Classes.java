@@ -264,6 +264,12 @@ class HintTextField extends JTextField implements FocusListener {
 	}
 	
 	@Override
+	public void setText(String text) {
+		super.setText(text);
+		setForeground(Color.BLACK);
+	}
+	
+	@Override
 	public String getText() {
 		String text = super.getText();
 		if ( text.trim().equals(hint) ) {
