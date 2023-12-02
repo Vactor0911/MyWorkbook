@@ -24,10 +24,10 @@ class MessageBox extends JDialog implements ActionListener {
 	static final int iconEXCLAMATION = 3;
 	static final int iconERROR = 4;
 	
-	private final ImageIcon iconInformation = new ImageIcon("images/Workbook.png");
-	private final ImageIcon iconQuestion = new ImageIcon("images/iconQuestion.png");
-	private final ImageIcon iconExclamation = new ImageIcon("images/iconExclamation.png");
-	private final ImageIcon iconError = new ImageIcon("images/iconError.png");
+	private final ImageIcon iconInformation = new ImageIcon("images/Information.png");
+	private final ImageIcon iconQuestion = new ImageIcon("images/Question.png");
+	private final ImageIcon iconExclamation = new ImageIcon("images/Exclamation.png");
+	private final ImageIcon iconError = new ImageIcon("images/Error.png");
 	
 	private final Font font = new Font(Frame.getFontName(), Font.PLAIN, 15);
 	
@@ -39,6 +39,8 @@ class MessageBox extends JDialog implements ActionListener {
 	private JButton btnYes = new JButton("예");
 	private JButton btnNo = new JButton("아니오");
 	
+	private JFrame frame;
+	private JDialog dialog;
 	private int answer = 0;
 	private String msg;
 	private int btnType;
@@ -47,6 +49,7 @@ class MessageBox extends JDialog implements ActionListener {
 	//JFrame
 	public MessageBox(JFrame frame, String msg, int btnType, int iconType) {
 		super(frame, frame.getTitle(), true);
+		this.frame = frame;
 		this.msg = msg;
 		this.btnType = btnType;
 		this.iconType = iconType;
@@ -57,6 +60,7 @@ class MessageBox extends JDialog implements ActionListener {
 	//JDialog
 	public MessageBox(JDialog dialog, String msg, int btnType, int iconType) {
 		super(dialog, dialog.getTitle(), true);
+		this.dialog = dialog;
 		this.msg = msg;
 		this.btnType = btnType;
 		this.iconType = iconType;
@@ -112,10 +116,10 @@ class MessageBox extends JDialog implements ActionListener {
 		pnlCenterMain.setBorder( BorderFactory.createEmptyBorder(10, 20, 10, 20) );
 		pnlBase.add(pnlCenterMain, BorderLayout.CENTER);
 		
-		pnlCenter.setLayout( new BoxLayout(pnlCenter, BoxLayout.Y_AXIS) );
+		String[] aryMsg = msg.split("\n");
+		pnlCenter.setLayout( new GridLayout(aryMsg.length, 1, 0, 0) );
 		pnlCenterMain.add(pnlCenter, BorderLayout.CENTER);
 		
-		String[] aryMsg = msg.split("\n");
 		for (int i=0; i<aryMsg.length; i++) {
 			JLabel lbl = new JLabel(aryMsg[i], SwingConstants.LEFT);
 			lbl.setFont(font);
@@ -150,6 +154,22 @@ class MessageBox extends JDialog implements ActionListener {
 		pnlCenterMain.add(lblIcon, BorderLayout.WEST);
 		
 		pack();
+		
+		//대화상자를 화면 정중앙에 위치
+		int x = 0;
+		int y = 0;
+		Window wnd;
+		if (frame != null) { //부모가 JFrame
+			wnd = frame;
+		}
+		else { //부모가 JDialog
+			wnd = dialog;
+		}
+		x = wnd.getX() + (int)(wnd.getWidth() * 0.5) - (int)(getWidth() * 0.5);
+		y = wnd.getY() + (int)(wnd.getHeight() * 0.5) - (int)(getHeight() * 0.5);
+		setLocation(x, y);
+		
+		
 		setVisible(true);
 	} //draw()
 	
@@ -675,20 +695,24 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 	private final ImageIcon imageInfo = new ImageIcon("images/Information.png");
 	
 	private Frame frame;
+	private File file;
 	private Workbook wb;
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
 	private ImageButton btnSolve = new ImageButton(imageSolve, "문제 풀이");
-	private ImageButton btnEdit = new ImageButton(imageEdit, "수정");
+	private ImageButton btnEdit = new ImageButton(imageEdit, "문제 수정");
 	private ImageButton btnExport = new ImageButton(imageExport, "내보내기");
 	private ImageButton btnDelete = new ImageButton(imageDelete, "삭제");
 	private ImageButton btnInfo = new ImageButton(imageInfo, "정보");
 
-	public WbOptionDlg(Frame frame, Workbook wb) {
-		super(frame, wb.getName(), 300, 300);
+	public WbOptionDlg(Frame frame, File file) {
+		super(frame, "", 300, 300);
 		setMinimumSize( new Dimension(300, 300) );
 		this.frame = frame;
-		this.wb = wb;
+		this.file = file;
+		FileIO fIO = new FileIO();
+		this.wb = fIO.loadFile( file.getPath() );
+		setTitle( wb.getName() );
 		lblTitle.setText( wb.getName(15) );
 		
 		add(pnlCenter, BorderLayout.CENTER);
@@ -764,10 +788,21 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 		//TODO 버튼 클릭 이벤트 기능 구현
 		if (e.getSource() == btnSolve) { //문제 풀이
 		}
-		else if (e.getSource() == btnEdit) { //수정
+		else if (e.getSource() == btnEdit) { //문제 수정
 			frame.setMenu("Question", wb);
 		}
 		else if (e.getSource() == btnExport) { //내보내기
+		}
+		else if (e.getSource() == btnDelete) { //삭제
+			if ( MessageBox.show(this, "문제집을 삭제하시겠습니까?", MessageBox.btnYES_NO,
+					MessageBox.iconQUESTION) == MessageBox.idYES ) {
+				file.delete();
+				frame.reloadWb();
+				MessageBox.show(this, "문제집이 성공적으로 삭제되었습니다.");
+			}
+			else {
+				return;
+			}
 		}
 		else if (e.getSource() == btnInfo) { //정보
 		}
