@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.image.*;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 class Workbook implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -144,62 +145,24 @@ class FileIO implements Serializable {
 	 * 문제집 파일을 지정된 경로에 저장한다.
 	 * @param filePath - 이름과 확장자가 포함된 저장할 파일의 경로
 	 * @param wb - Workbook 객체
-	 * @param override - 덮어쓰기 여부
 	 * @return 파일 저장 성공시 true 반환, 실패시 false 반환
 	*/
-    public static boolean saveFile(String filePath, Workbook wb, boolean override) {
+    public static boolean saveFile(String filePath, Workbook wb) {
         try {
-        	if (override) { //덮어쓰기
-        		String path = filePath.replace(" ", "_");
-        		FileOutputStream fileOutput = new FileOutputStream(path);
-				ObjectOutputStream objOutput = new ObjectOutputStream(fileOutput);
-	        	objOutput.writeObject(wb);
-	            
-	            fileOutput.close();
-	            objOutput.close();
-	            return true;
-        	}
-        	else { //이어쓰기
-        		for (int i=0; i<=10; i++) {
-        			String path = filePath.replace(" ", "_");
-        			
-        			if (i != 0) {
-        				String[] aryPath = filePath.split("\\.");
-        				path = String.format( "%s(%s).%s", aryPath[0], i, aryPath[1] );
-        			}
-        			
-        			File file = new File(path);
-        			if( !file.exists() ) { //중복되는 파일이 없다면 저장
-        				FileOutputStream fileOutput = new FileOutputStream(path);
-        				ObjectOutputStream objOutput = new ObjectOutputStream(fileOutput);
-        	        	objOutput.writeObject(wb);
-        	            
-        	            fileOutput.close();
-        	            objOutput.close();
-        	            return true;
-        			}
-    	    	}
-        	}
-    		
-    		//파일을 생성하지 못했다면 오류 반환
-    		System.out.println("파일을 생성하지 못했습니다.");
-    		return false;
+    		FileOutputStream fileOutput = new FileOutputStream(filePath);
+			ObjectOutputStream objOutput = new ObjectOutputStream(fileOutput);
+        	objOutput.writeObject(wb);
+            
+            fileOutput.close();
+            objOutput.close();
+            return true;
         }
         catch (Exception e) {
             System.out.println("파일을 생성하지 못했습니다.");
             return false;
         }
     }
-    
-    /**
-	 * 문제집 파일을 지정된 경로에 덮어쓰지 않고 저장한다.
-	 * @param filePath - 이름과 확장자가 포함된 저장할 파일의 경로
-	 * @param wb - Workbook 객체
-	 * @return 파일 저장 성공시 true 반환, 실패시 false 반환
-	*/
-    public static boolean saveFile(String filePath, Workbook wb) {
-    	return saveFile(filePath, wb, false);
-    }
+   
 
     /**
      * 지정된 경로에서 파일을 불러온다.
@@ -214,7 +177,6 @@ class FileIO implements Serializable {
         }
         catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
-            //TODO 파일 불러오기 오류 메시지 팝업
         }
         return wb;
     }
@@ -326,4 +288,69 @@ class HintTextField extends JTextField implements FocusListener {
 			warn(false);
 		}
 	}
-}
+} //HintTextField 클래스
+
+
+class ColorComboBox extends JComboBox<Color> {
+	private static final long serialVersionUID = 1L;
+	private static final Color PINK = new Color(244, 153, 192);
+	private static final Color ORANGE = new Color(247, 148, 30);
+	private static final Color YELLOW = new Color(255, 247, 154);
+	private static final Color GREEN = new Color(171, 211, 116);
+	private static final Color BLUE = new Color(109, 207, 246);
+	
+	private Color[] aryColor = { PINK, ORANGE, YELLOW, GREEN, BLUE };
+	
+	private HashMap<Color, Integer> hmColor = new HashMap<>();
+
+	@SuppressWarnings("unchecked")
+	public ColorComboBox() {
+		super();
+		DefaultComboBoxModel<Color> model = new DefaultComboBoxModel<Color>();
+		for (int i=0; i<aryColor.length; i++) {
+			hmColor.put(aryColor[i], i);
+		}
+			
+		for (Color color : aryColor) {
+			model.addElement(color);
+		}
+		setModel(model);
+		setRenderer( new ColorRenderer() );
+		setOpaque(true);
+		setSelectedIndex(0);
+	} //생성자
+	
+	@Override
+	public void setSelectedItem(Object object) {
+		super.setSelectedItem(object);
+		setBackground( (Color)object );
+	}
+	
+	@SuppressWarnings("rawtypes")
+	class ColorRenderer extends JLabel implements ListCellRenderer {
+		private static final long serialVersionUID = 1L;
+		
+		public ColorRenderer() {
+			setOpaque(true);
+			setPreferredSize( new Dimension(0, 30) );
+		}
+		
+		@Override
+		public Component getListCellRendererComponent(JList list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus) {
+			setBackground( (Color)value );
+			setText(" ");
+			setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+			return this;
+		}
+	} //ColorRenderer 클래스
+	
+	public Color getColor() {
+		return aryColor[ getSelectedIndex() ];
+	}
+	
+	public int getColorIndex(Color color) {
+		return hmColor.get(color);
+	}
+	
+} //JColorComboBox 클래스
