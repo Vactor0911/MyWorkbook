@@ -828,6 +828,8 @@ class QuestionDlg extends Dialogs implements ActionListener {
 	private Frame frame;
 	private String filePath;
 	private Workbook wb;
+	private int index;
+	
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
 	
@@ -858,19 +860,23 @@ class QuestionDlg extends Dialogs implements ActionListener {
 	private MyKeyAdapter keyAdapter = new MyKeyAdapter();
 	private ImageIcon image;
 
-	public QuestionDlg(Frame frame, String filePath, int type) {
+	public QuestionDlg(Frame frame, String filePath, int index) {
 		super(frame, "", 400, 300);
 		this.frame = frame;
 		this.filePath = filePath;
 		this.wb = FileIO.loadFile(filePath);
+		this.index = index;
+		boolean flagAdd = index == -1;
+		Question question = null;
 		
-		if (type == idADD) {
+		if (flagAdd) {
 			setTitle("문제 추가");
 			lblTitle.setText("문제 추가");
 		}
 		else {
 			setTitle("문제 수정");
 			lblTitle.setText("문제 수정");
+			question = wb.getQuestion().get(index);
 		}
 		
 		JButton[] aryBtn = { btnPicture, btnAdd, btnEdit, btnDelete };
@@ -889,6 +895,9 @@ class QuestionDlg extends Dialogs implements ActionListener {
 		
 		cbCategory.setPreferredSize( new Dimension(400, 35) );
 		pnlCenter.add(cbCategory);
+		if (!flagAdd) {
+			cbCategory.setSelectedIndex( question.getCategory() );
+		}
 		addGap(15);
 		
 		//문제
@@ -896,6 +905,10 @@ class QuestionDlg extends Dialogs implements ActionListener {
 		addGap(5);
 		
 		addTextField(pnlCenter, tfTitle);
+		if (!flagAdd) {
+			tfTitle.setText( question.getTitle() );
+			tfTitle.focusLost(null);
+		}
 		addGap(5);
 		
 		//이미지 선택
@@ -910,6 +923,10 @@ class QuestionDlg extends Dialogs implements ActionListener {
 		pnlTemp.add(lblPicture);
 		pnlTemp.add(btnPicture);
 		pnlCenter.add(pnlTemp);
+		if (!flagAdd) {
+			image = question.getImage();
+			lblPicture.setIcon(image);
+		}
 		addGap(10);
 		
 		//정답
@@ -917,6 +934,10 @@ class QuestionDlg extends Dialogs implements ActionListener {
 		addGap(5);
 		
 		addTextField(pnlCenter, tfAnswer);
+		if (!flagAdd) {
+			tfAnswer.setText( question.getAnswer() );
+			tfAnswer.focusLost(null);
+		}
 		addGap(15);
 		
 		//오답 선택지
@@ -928,14 +949,35 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			addGroupLabel(pnlOption, lblWrongAns);
 			pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
 			
-			HintTextField tf = new HintTextField("오답을 입력하세요");
-			tf.setPreferredSize( new Dimension(400, 40) );
-			tf.setMinimumSize( new Dimension(400, 40) );
-			tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
-			tf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
-			tf.addKeyListener(keyAdapter);
-			listOption.add(tf);
-			pnlOption.add(tf);
+			HintTextField htf = new HintTextField("오답을 입력하세요");
+			htf.setPreferredSize( new Dimension(400, 40) );
+			htf.setMinimumSize( new Dimension(400, 40) );
+			htf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+			htf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+			htf.addKeyListener(keyAdapter);
+			if (!flagAdd) {
+				htf.setText( question.getAryOption()[0] );
+			}
+			listOption.add(htf);
+			pnlOption.add(htf);
+			
+			if (!flagAdd) {
+				String[] aryOption = question.getAryOption();
+				System.out.println(aryOption.length);
+				for (int i=1; i<aryOption.length; i++) {
+					pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
+					htf = new HintTextField("오답을 입력하세요 (선택)");
+					htf.setPreferredSize( new Dimension(400, 40) );
+					htf.setMinimumSize( new Dimension(400, 40) );
+					htf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+					htf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+					htf.setText( aryOption[i] );
+					htf.addKeyListener(keyAdapter);
+					htf.focusLost(null);
+					listOption.add(htf);
+					pnlOption.add(htf);
+				}
+			}
 		}
 		addGap(15);
 		
@@ -945,14 +987,18 @@ class QuestionDlg extends Dialogs implements ActionListener {
 		addGap(5);
 		
 		addTextField(pnlCenter, tfExplain);
+		if (!flagAdd) {
+			tfExplain.setText( question.getExplain() );
+			tfExplain.focusLost(null);
+		}
 		addGap(15);
 		
-		//추가 버튼
+		//버튼
 		JPanel pnlBtn = new JPanel();
-		pnlBtn.setLayout( new FlowLayout(FlowLayout.CENTER, 0, 0) );
+		pnlBtn.setLayout( new FlowLayout(FlowLayout.CENTER, 10, 0) );
 		pnlCenter.add(pnlBtn);
 		
-		if (type == idADD) {
+		if (flagAdd) {
 			btnAdd.setPreferredSize( new Dimension(150, 50) );
 			btnAdd.setFont(boldFont);
 			btnAdd.setBackground( Frame.getColor() );
@@ -960,11 +1006,15 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			pnlBtn.add(btnAdd);
 		}
 		else {
-			btnEdit.setPreferredSize( new Dimension(150, 50) );
-			btnEdit.setFont(boldFont);
-			btnEdit.setBackground( Frame.getColor() );
-			btnEdit.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
-			pnlBtn.add(btnEdit);
+			JButton[] aryTemp = { btnEdit, btnDelete };
+			for (JButton btn : aryTemp) {
+				btn.setPreferredSize( new Dimension(150, 50) );
+				btn.setFont(boldFont);
+				btn.setBackground( Frame.getColor() );
+				btn.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+				pnlBtn.add(btn);
+			}
+			btnDelete.setBackground(Color.RED);
 		}
 		
 		pack();
@@ -1049,20 +1099,19 @@ class QuestionDlg extends Dialogs implements ActionListener {
 	class MyKeyAdapter extends KeyAdapter {
 		@Override
 		public void keyReleased(KeyEvent e) {
-			System.out.println(listOption.get(0).getText());
 			drawOption();
 		}
 	} //MyKeydapter 클래스
 	
 
 	//문제 추가
-	public static void addQuestion(Frame frame, String filePath, int type) {
-		new QuestionDlg(frame, filePath, type);
+	public static void addQuestion(Frame frame, String filePath) {
+		new QuestionDlg(frame, filePath, -1);
 	}
 	
 	//문제 수정
-	public static void editQuestion(Frame frame, String filePath, int type) {
-		new QuestionDlg(frame, filePath, type);
+	public static void editQuestion(Frame frame, String filePath, int index) {
+		new QuestionDlg(frame, filePath, index);
 	}
 	
 	//공백 추가
@@ -1105,7 +1154,7 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			}
 		}
 		
-		if (flagAdd && listOption.size() <= 4) {
+		if (flagAdd && listOption.size() < 4) {
 			pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
 			HintTextField htf = new HintTextField("오답을 입력하세요 (선택)");
 			htf.setPreferredSize( new Dimension(400, 40) );
@@ -1128,7 +1177,15 @@ class QuestionDlg extends Dialogs implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == btnAdd) { //문제 추가
+		if (e.getSource() == btnAdd || e.getSource() == btnEdit) { //문제 추가 & 문제 수정
+			//문제 수정 - 확인 메시지
+			if (e.getSource() == btnEdit) {
+				if ( MessageBox.show(this, "문제를 수정하시겠습니까?", MessageBox.btnYES_NO,
+						MessageBox.iconQUESTION) == MessageBox.idNO ) {
+					return;
+				}
+			}
+			
 			//문제 유형
 			int category = cbCategory.getSelectedIndex();
 			
@@ -1146,10 +1203,11 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			listOption.get(0).warn( option.isEmpty() );
 			
 			if (category == 0) { //문제 형식이 '선택식'일 경우
-				aryOption = new String[listOption.size()];
-				for (int i=0; i<aryOption.length; i++) {
-					if ( !option.isEmpty() ) {
-						aryOption[i] = option;
+				aryOption = new String[ listOption.size() ];
+				for (int i=0; i<listOption.size(); i++) {
+					String strOption = listOption.get(i).getText();
+					if ( !strOption.isEmpty() ) {
+						aryOption[i] = strOption;
 					}
 				}
 			}
@@ -1164,15 +1222,23 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			String explain = tfExplain.getText();
 			
 			Question q = new Question(category, title, answer, aryOption, explain, image);
-			wb.getQuestion().add(q);
+			if (e.getSource() == btnAdd) {
+				wb.getQuestion().add(q);
+			}
+			else if (e.getSource() == btnEdit) {
+				wb.getQuestion().remove(index);
+				wb.getQuestion().add(index, q);
+			}
 			FileIO.saveFile(filePath, wb, true); //생성한 데이터 덮어쓰기
 			frame.setMenu("Question", filePath); //문제 불러오기
 		}
-		else if (e.getSource() == btnEdit) { //문제 수정
-			
-		}
 		else if (e.getSource() == btnDelete) { //문제 삭제
-			
+			if ( MessageBox.show(this, "문제를 삭제하시겠습니까?", MessageBox.btnYES_NO,
+					MessageBox.iconQUESTION) == MessageBox.idYES ) {
+				wb.getQuestion().remove(index);
+				FileIO.saveFile(filePath, wb, true); //생성한 데이터 덮어쓰기
+				frame.setMenu("Question", filePath); //문제 불러오기
+			}
 		}
 		else { //이미지 선택
 			JFileChooser jfc = new JFileChooser();

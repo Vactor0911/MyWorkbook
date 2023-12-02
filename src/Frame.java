@@ -251,7 +251,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		
 		private Workbook workbook = null;
 		private int index = 0;
-		private MyMouseAdapter adapter = new MyMouseAdapter();
 		
 		//문제 추가 버튼
 		public QuestionButton() {
@@ -275,51 +274,47 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			
 			JPanel pnlBase = new JPanel();
 			pnlBase.setBorder( BorderFactory.createEmptyBorder(5, 5, 5, 5) );
-			pnlBase.setLayout( new BorderLayout() );
+			pnlBase.setLayout( new BorderLayout(10, 0) );
 			add(pnlBase);
 			
-			JLabel lblIndex = new JLabel(Integer.toString(index + 1) + ".", SwingConstants.CENTER);
+			JLabel lblIndex = new JLabel(Integer.toString(index + 1) );
 			lblIndex.setFont( new Font(FONT_NAME, Font.BOLD, 40) );
+			lblIndex.setPreferredSize( new Dimension(80, 80) );
 			pnlBase.add(lblIndex, BorderLayout.WEST);
 			
 			JPanel pnlCenter = new JPanel();
-			pnlCenter.setLayout( new BorderLayout() );
+			pnlCenter.setLayout( new GridLayout(2, 1, 0, 0) );
+			pnlBase.add(pnlCenter, BorderLayout.CENTER);
+			
+			Question q = workbook.getQuestion().get(index);
+			JLabel lblTitle = new JLabel( q.getTitle() );
+			lblTitle.setFont( new Font(FONT_NAME, Font.PLAIN, 25) );
+			JLabel lblAnswer = new JLabel( q.getAnswer() );
+			lblAnswer.setFont( new Font(FONT_NAME, Font.PLAIN, 20) );
+			lblAnswer.setForeground(Color.GRAY);
+			pnlCenter.add(lblTitle);
+			pnlCenter.add(lblAnswer);
 		} //생성자
-		
-		private class MyMouseAdapter extends MouseAdapter {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				c.setCursor( new Cursor(Cursor.HAND_CURSOR) );
-				JButton btn = (JButton)e.getComponent();
-				btn.setBorder( new MatteBorder(1, 1, 1, 1, COLOR_BORDER) );
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				c.setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
-				JButton btn = (JButton)e.getComponent();
-				btn.setBorder(null);
-			}
-		}
 		
 		//초기화
 		public void init() {
+			setBorder(null);
 			setBackground(null);
 			setContentAreaFilled(false);
 			setPreferredSize( new Dimension(0, 100) );
 			setMaximumSize( new Dimension(10000, 100) );
 			setVisible(true);
 			addActionListener(this);
-			addMouseListener(adapter);
+			addMouseListener(frame);
 		}
 
 		@Override
 		public void actionPerformed(ActionEvent e) { //문제 버튼 클릭
 			if (workbook == null) { //문제 추가
-				QuestionDlg.addQuestion(frame, filePathBuffer, QuestionDlg.idADD);
+				QuestionDlg.addQuestion(frame, filePathBuffer);
 			}
 			else { //문제 수정
-				setMenu("EditQuestion", filePathBuffer);
+				QuestionDlg.editQuestion(frame, filePathBuffer, index);
 			}
 		}
 	} //QuestionButton 클래스
@@ -509,18 +504,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				}
 				pnlScroll.add(btnAddQuestion);
 				break;
-			case "AddQuestion":
-				lblMenuName.setText(" 문제 추가");
-				pnlNorthEast.add(btnRevert);
-				
-				pnlCenter.add(sPnl, BorderLayout.CENTER);
-				pnlScroll.removeAll();
-				pnlScroll.setLayout( new BoxLayout(pnlScroll, BoxLayout.Y_AXIS) );
-				
-				break;
 		} //switch()
 		
-		c.repaint();
+		c.validate();
 		this.filePathBuffer = filePath;
 		strMenu = menu;
 		System.out.println(menu);
