@@ -315,12 +315,22 @@ public class Dialogs extends JDialog {
 class WbSortDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	
-	private final ImageIcon imgSortAccuracyAsc = new ImageIcon("images/SortAccuracyAscend.png");
+	private final ImageIcon imgSortNameAsc = new ImageIcon("images/SortNameAscend.png");
+	private final ImageIcon imgSortNameDesc = new ImageIcon("images/SortNameDescend.png");
+	private final ImageIcon imgSortSizeAsc = new ImageIcon("images/SortSizeAscend.png");
+	private final ImageIcon imgSortSizeDesc = new ImageIcon("images/SortSizeDescend.png");
+	
+	private JButton btnSortNameAsc = new JButton("이름순 (오른차순)");
+	private JButton btnSortNameDesc = new JButton("이름순 (내림차순)");
+	private JButton btnSortSizeAsc = new JButton("문제 적은순");
+	private JButton btnSortSizeDesc = new JButton("문제 많은순");
 		
 	private Frame frame;
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
-	private ImageButton[] aryBtn = new ImageButton[6];
+	private JButton[] aryBtn = { btnSortNameAsc, btnSortNameDesc, btnSortSizeDesc,
+			btnSortSizeAsc };
+	private MyMouseAdapter adapter = new MyMouseAdapter();
 	
 	public WbSortDlg(Frame frame) {
 		super(frame, "문제집 정렬", 400, 600);
@@ -330,72 +340,45 @@ class WbSortDlg extends Dialogs implements ActionListener {
 		Container c = getContentPane();
 		c.add(pnlCenter, BorderLayout.CENTER);
 		
-		pnlCenter.setLayout( new GridLayout(6, 1, 0 ,0) );
-		ImageIcon[] aryImageIcon = { imgSortAccuracyAsc };
-		String[] arySearchList = { "이름순 (오름차순)", "이름순 (내림차순)", "문제 많은순", "문제 적은순",
-				"정답률 높은순", "정답률 낮은순" };
-		for(int i=0; i<1; i++) {
-			aryBtn[i] = new ImageButton( aryImageIcon[i], arySearchList[i] );
-			aryBtn[i].addActionListener(this);
-			pnlCenter.add( aryBtn[i] );
-			System.out.println(aryBtn[i].getText() );
+		pnlCenter.setLayout( new GridLayout(4, 1, 0 ,0) );
+		ImageIcon[] aryImage = { imgSortNameAsc, imgSortNameDesc, imgSortSizeDesc,
+				imgSortSizeAsc };
+		Font font = new Font(Frame.getFontName(), Font.PLAIN, 20);
+		for(int i=0; i<aryBtn.length; i++) {
+			Image image = aryImage[i].getImage().getScaledInstance(60, 60, Image.SCALE_SMOOTH);
+			JButton btn = aryBtn[i];
+			btn.setIcon( new ImageIcon(image) );
+			btn.setPreferredSize( new Dimension(300, 60) );
+			btn.setMinimumSize( new Dimension(300, 60) );
+			btn.setFont(font);
+			btn.setBackground(null);
+			btn.setBorder(null);
+			btn.setContentAreaFilled(false);
+			btn.addActionListener(this);
+			btn.addMouseListener(adapter);
+			pnlCenter.add(btn);
+			System.out.println(btn.getText() );
 		}
 		
+		pack();
 		setVisible(true);
 	} //생성자
 	
-	class ImageButton extends JButton {
-		private static final long serialVersionUID = 1L;
-		private MyMouseAdapter adapter = new MyMouseAdapter();
-		private String text = "";
-		
-		public ImageButton(ImageIcon image, String text) {
-			setBackground(null);
-			setBorder(null);
-			setContentAreaFilled(false);
-			setPreferredSize( new Dimension(0, 60) );
-			addMouseListener(adapter);
-			this.text = text;
-			
-			JPanel pnlBase = new JPanel();
-			pnlBase.setLayout( new BorderLayout() );
-			add(pnlBase, BorderLayout.CENTER);
-			
-			//아이콘 그리기
-			Image resizedImage = image.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
-			JLabel lblImage = new JLabel( new ImageIcon(resizedImage) );
-			lblImage.setPreferredSize( new Dimension(80, 50) );
-			pnlBase.add(lblImage, BorderLayout.WEST);
-			
-			//텍스트 그리기
-			JLabel lblText = new JLabel(text, SwingConstants.CENTER);
-			lblText.setFont( new Font(Frame.getFontName(), Font.PLAIN, 25) );
-			pnlBase.add(lblText, BorderLayout.CENTER);
-			
-			setVisible(true);
-		} //생성자
-		
-		class MyMouseAdapter extends MouseAdapter {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
-				JButton btn = (JButton)e.getComponent();
-				btn.setBorder( new MatteBorder( 1, 1, 1, 1, Frame.getColorBorder() ) );
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
-				JButton btn = (JButton)e.getComponent();
-				btn.setBorder(null);
-			}
-		}
-		
+	class MyMouseAdapter extends MouseAdapter {
 		@Override
-		public String getText() {
-			return text;
+		public void mouseEntered(MouseEvent e) {
+			getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
+			JButton btn = (JButton)e.getComponent();
+			btn.setBorder( new MatteBorder(1, 1, 1, 1, Frame.getColorBorder() ) );
 		}
-	} //ImageButton 클래스
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+			JButton btn = (JButton)e.getComponent();
+			btn.setBorder(null);
+		}
+	}
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {

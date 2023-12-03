@@ -416,12 +416,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			case 3: //문제 적은순
 				System.out.println("문제 적은순");
 				break;
-			case 4: //정답률 높은순
-				System.out.println("정답률 높은순");
-				break;
-			default: //정답률 낮은순
-				System.out.println("정답률 낮은순");
-				break;
 		} //switch()
 		
 		//문제집 버튼을 화면에 부착
@@ -502,6 +496,8 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 					pnlScroll.add( new QuestionButton(workbook, i) );
 				}
 				pnlScroll.add(btnAddQuestion);
+				break;
+			case "Solve": //문제 풀이
 				break;
 		} //switch()
 		
