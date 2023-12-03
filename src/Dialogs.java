@@ -315,12 +315,22 @@ public class Dialogs extends JDialog {
 class WbSortDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	
-	private final ImageIcon imgSortAccuracyAsc = new ImageIcon("images/SortAccuracyAscend.png");
+	private final ImageIcon imgSortNameAsc = new ImageIcon("images/SortNameAscend.png");
+	private final ImageIcon imgSortNameDesc = new ImageIcon("images/SortNameDescend.png");
+	private final ImageIcon imgSortSizeAsc = new ImageIcon("images/SortSizeAscend.png");
+	private final ImageIcon imgSortSizeDesc = new ImageIcon("images/SortSizeDescend.png");
+	
+	private JButton btnSortNameAsc = new JButton("이름순 (오른차순)");
+	private JButton btnSortNameDesc = new JButton("이름순 (내림차순)");
+	private JButton btnSortSizeAsc = new JButton("문제 적은순");
+	private JButton btnSortSizeDesc = new JButton("문제 많은순");
 		
 	private Frame frame;
 	private JLabel lblTitle = getLabel();
 	private JPanel pnlCenter = new JPanel();
-	private ImageButton[] aryBtn = new ImageButton[6];
+	private JButton[] aryBtn = { btnSortNameAsc, btnSortNameDesc, btnSortSizeDesc,
+			btnSortSizeAsc };
+	private MyMouseAdapter adapter = new MyMouseAdapter();
 	
 	public WbSortDlg(Frame frame) {
 		super(frame, "문제집 정렬", 400, 600);
@@ -330,72 +340,44 @@ class WbSortDlg extends Dialogs implements ActionListener {
 		Container c = getContentPane();
 		c.add(pnlCenter, BorderLayout.CENTER);
 		
-		pnlCenter.setLayout( new GridLayout(6, 1, 0 ,0) );
-		ImageIcon[] aryImageIcon = { imgSortAccuracyAsc };
-		String[] arySearchList = { "이름순 (오름차순)", "이름순 (내림차순)", "문제 많은순", "문제 적은순",
-				"정답률 높은순", "정답률 낮은순" };
-		for(int i=0; i<1; i++) {
-			aryBtn[i] = new ImageButton( aryImageIcon[i], arySearchList[i] );
-			aryBtn[i].addActionListener(this);
-			pnlCenter.add( aryBtn[i] );
-			System.out.println(aryBtn[i].getText() );
+		pnlCenter.setLayout( new GridLayout(4, 1, 0 ,0) );
+		ImageIcon[] aryImage = { imgSortNameAsc, imgSortNameDesc, imgSortSizeDesc,
+				imgSortSizeAsc };
+		Font font = new Font(Frame.getFontName(), Font.PLAIN, 20);
+		for(int i=0; i<aryBtn.length; i++) {
+			Image image = aryImage[i].getImage().getScaledInstance(60, 60, Image.SCALE_SMOOTH);
+			JButton btn = aryBtn[i];
+			btn.setIcon( new ImageIcon(image) );
+			btn.setPreferredSize( new Dimension(300, 60) );
+			btn.setMinimumSize( new Dimension(300, 60) );
+			btn.setFont(font);
+			btn.setBackground(null);
+			btn.setBorder(null);
+			btn.setContentAreaFilled(false);
+			btn.addActionListener(this);
+			btn.addMouseListener(adapter);
+			pnlCenter.add(btn);
 		}
 		
+		pack();
 		setVisible(true);
 	} //생성자
 	
-	class ImageButton extends JButton {
-		private static final long serialVersionUID = 1L;
-		private MyMouseAdapter adapter = new MyMouseAdapter();
-		private String text = "";
-		
-		public ImageButton(ImageIcon image, String text) {
-			setBackground(null);
-			setBorder(null);
-			setContentAreaFilled(false);
-			setPreferredSize( new Dimension(0, 60) );
-			addMouseListener(adapter);
-			this.text = text;
-			
-			JPanel pnlBase = new JPanel();
-			pnlBase.setLayout( new BorderLayout() );
-			add(pnlBase, BorderLayout.CENTER);
-			
-			//아이콘 그리기
-			Image resizedImage = image.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
-			JLabel lblImage = new JLabel( new ImageIcon(resizedImage) );
-			lblImage.setPreferredSize( new Dimension(80, 50) );
-			pnlBase.add(lblImage, BorderLayout.WEST);
-			
-			//텍스트 그리기
-			JLabel lblText = new JLabel(text, SwingConstants.CENTER);
-			lblText.setFont( new Font(Frame.getFontName(), Font.PLAIN, 25) );
-			pnlBase.add(lblText, BorderLayout.CENTER);
-			
-			setVisible(true);
-		} //생성자
-		
-		class MyMouseAdapter extends MouseAdapter {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
-				JButton btn = (JButton)e.getComponent();
-				btn.setBorder( new MatteBorder( 1, 1, 1, 1, Frame.getColorBorder() ) );
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
-				JButton btn = (JButton)e.getComponent();
-				btn.setBorder(null);
-			}
-		}
-		
+	class MyMouseAdapter extends MouseAdapter {
 		@Override
-		public String getText() {
-			return text;
+		public void mouseEntered(MouseEvent e) {
+			getContentPane().setCursor( new Cursor(Cursor.HAND_CURSOR) );
+			JButton btn = (JButton)e.getComponent();
+			btn.setBorder( new MatteBorder(1, 1, 1, 1, Frame.getColorBorder() ) );
 		}
-	} //ImageButton 클래스
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			getContentPane().setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
+			JButton btn = (JButton)e.getComponent();
+			btn.setBorder(null);
+		}
+	}
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -740,7 +722,16 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		//TODO 버튼 클릭 이벤트 기능 구현
 		if (e.getSource() == btnSolve) { //문제 풀이
-			//TODO 문제 풀이 구현
+			if (wb.getQuestion().size() > 0) {
+				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
+				new QOptionDlg(frame, filePath);
+				return;
+			}
+			else {
+				MessageBox.show(frame, "등록된 문제가 없습니다!", MessageBox.btnOK,
+						MessageBox.iconEXCLAMATION);
+				return;
+			}
 		}
 		else if (e.getSource() == btnEdit) { //문제 수정
 			frame.setMenu("Question", filePath);
@@ -1155,52 +1146,14 @@ class QuestionDlg extends Dialogs implements ActionListener {
 		setVisible(true);
 	} //생성자
 	
-	class MyComboBox extends JComboBox<String> implements ItemListener {
+	class MyComboBox extends CustomComboBox implements ItemListener {
 		private static final long serialVersionUID = 1L;
 		private String[] aryItem;
 
-		@SuppressWarnings("unchecked")
 		public MyComboBox(String[] aryItem) {
-			super();
-			DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>();
-			this.aryItem = aryItem;
-			
-			for (String k : aryItem) {
-				model.addElement(k);
-			}
-			setBackground( Frame.getColor() );
-			setFont( new Font(Frame.getFontName(), Font.BOLD, 20) );
-			setModel(model);
-			setRenderer( new Renderer() );
-			setOpaque(true);
-			setSelectedIndex(0);
+			super(aryItem);
 			addItemListener(this);
 		} //생성자
-		
-		@Override
-		public void setSelectedItem(Object object) {
-			super.setSelectedItem(object);
-		}
-		
-		@SuppressWarnings("rawtypes")
-		class Renderer extends JLabel implements ListCellRenderer {
-			private static final long serialVersionUID = 1L;
-			
-			public Renderer() {
-				setOpaque(true);
-				setPreferredSize( new Dimension(0, 30) );
-			}
-			
-			@Override
-			public Component getListCellRendererComponent(JList list, Object value,
-					int index, boolean isSelected, boolean cellHasFocus) {
-				setText( " " + (String)value );
-				setFont( new Font(Frame.getFontName(), Font.PLAIN, 15) );
-				setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
-				setBackground( Frame.getColor() );
-				return this;
-			}
-		} //Renderer 클래스
 		
 		public String getText() {
 			return aryItem[ getSelectedIndex() ];
@@ -1407,3 +1360,271 @@ class QuestionDlg extends Dialogs implements ActionListener {
 	}
 	
 } //QAddDlg 클래스
+
+
+class QOptionDlg extends Dialogs implements ActionListener {
+	private static final long serialVersionUID = 1L;
+	private final Font boldFont = new Font(Frame.getFontName(), Font.BOLD, 20);
+	
+	private JLabel lblTitle = getLabel();
+	private JPanel pnlCenter = new JPanel();
+	private Frame frame;
+	private String filePath;
+	private Workbook wb;
+	private boolean flagClose = false;
+	
+	private JLabel lblOrder = new JLabel("출제 순서");
+	private JRadioButton rbOrderNormal = new JRadioButton("일반");
+	private JRadioButton rbOrderRandom = new JRadioButton("랜덤");
+	private JPanel pnlOrder = new JPanel();
+	
+	private JLabel lblRange = new JLabel("출제 문제수");
+	private JButton btnRangeSub = new JButton("-1");
+	private JButton btnRangeSub10 = new JButton("-10");
+	private JButton btnRangeSum = new JButton("+1");
+	private JButton btnRangeSum10 = new JButton("+10");
+	private MyTextField tfRange = new MyTextField("전체");
+	private JPanel pnlRange = new JPanel();
+	
+	private JLabel lblNotice = new JLabel("정답 알림 표시");
+	private JCheckBox checkNotice = new JCheckBox("알림 표시");
+	
+	private JButton btnOk = new JButton("풀이 시작");
+
+	public QOptionDlg(Frame frame, String filePath) {
+		super(frame, "문제 풀이 설정", 300, 500);
+		this.frame = frame;
+		this.filePath = filePath;
+		this.wb = FileIO.loadFile(filePath);
+		addWindowListener( new MyWindowAdapter() );
+		
+		lblTitle.setText( wb.getName() );
+		pnlCenter.setLayout( new BoxLayout(pnlCenter, BoxLayout.Y_AXIS) );
+		pnlCenter.setBorder( BorderFactory.createEmptyBorder(10, 10, 10, 10) );
+		add(pnlCenter, BorderLayout.CENTER);
+
+		//출제 순서
+		addGroupLabel(lblOrder);
+		
+		pnlOrder.setLayout( new FlowLayout(FlowLayout.CENTER, 10, 0) );
+		pnlCenter.add(pnlOrder);
+		
+		JRadioButton[] aryRb = { rbOrderNormal, rbOrderRandom };
+		ButtonGroup groupOrder = new ButtonGroup();
+		for (JRadioButton rb : aryRb) {
+			rb.setFont( new Font(Frame.getFontName(), Font.PLAIN, 18) );
+			pnlOrder.add(rb);
+			groupOrder.add(rb);
+		}
+		rbOrderNormal.setSelected(true);
+		addGap(15);
+		
+		//출제 범위
+		addGroupLabel(lblRange);
+		
+		pnlRange.setLayout( new FlowLayout(FlowLayout.CENTER, 5, 0) );
+		pnlCenter.add(pnlRange);
+		
+		Component[] aryRangeObj = { btnRangeSub, btnRangeSub10, tfRange, btnRangeSum10,
+				btnRangeSum };
+		for (Component obj : aryRangeObj) {
+			Dimension size;
+			switch ( obj.getClass().getName() ) {
+				case "javax.swing.JButton":
+					JButton btn = (JButton)obj;
+					btn.setFont( new Font(Frame.getFontName(), Font.BOLD, 16) );
+					btn.setBackground( Frame.getColor() );
+					btn.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+					size = new Dimension(40, 30);
+					btn.setPreferredSize(size);
+					btn.setMinimumSize(size);
+					btn.addActionListener(this);
+					break;
+				default:
+					MyTextField tf = (MyTextField)obj;
+					tf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 16) );
+					size = new Dimension(100, 30);
+					tf.setPreferredSize(size);
+					tf.setMinimumSize(size);
+					int max = wb.getQuestion().size();
+					tf.setMax(max);
+					tf.setNum(max);
+					break;
+			}
+			pnlRange.add(obj);
+		}
+		addGap(15);
+		
+		//정답 알림 표시
+		addGroupLabel(lblNotice);
+		
+		JPanel pnlCorrect = new JPanel();
+		pnlCorrect.setLayout( new FlowLayout(FlowLayout.RIGHT, 0, 0) );
+		pnlCenter.add(pnlCorrect);
+		
+		checkNotice.setFont( new Font(Frame.getFontName(), Font.BOLD, 16) );
+		checkNotice.setSelected(true);
+		pnlCorrect.add(checkNotice);
+		addGap(15);
+		
+		//구분선
+		JPanel line = new JPanel();
+		line.setBorder( BorderFactory.createLineBorder(Frame.getColorBorder(), 2, false) );
+		Dimension sizeLine = new Dimension(300, 2);
+		line.setPreferredSize(sizeLine);
+		line.setMaximumSize(sizeLine);
+		pnlCenter.add(line);
+		addGap(15);
+		
+		//풀이 시작 버튼
+		JPanel pnlTemp = new JPanel();
+		pnlTemp.setLayout( new FlowLayout(FlowLayout.CENTER, 0, 0) );
+		pnlCenter.add(pnlTemp);
+		
+		btnOk.setFont(boldFont);
+		btnOk.setBackground( Frame.getColor() );
+		btnOk.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+		Dimension size = new Dimension(150, 40);
+		btnOk.setPreferredSize(size);
+		btnOk.setMinimumSize(size);
+		btnOk.addActionListener(this);
+		pnlTemp.add(btnOk);
+		
+		pack();
+		moveToMid();
+		setVisible(true);
+	} //생성자
+
+	class MyWindowAdapter extends WindowAdapter {
+		@Override
+		public void windowClosed(WindowEvent e) {
+			if (!flagClose) {
+				new WbOptionDlg(frame, filePath);
+			}
+		}
+	} //MyWindowAdapter 클래스
+	
+	class MyTextField extends JTextField {
+		private static final long serialVersionUID = 1L;
+		private int num;
+		private int min = 1;
+		private int max = 100;
+
+		public MyTextField(String text) {
+			this(text, 1, 100);
+		} //생성자
+		
+		public MyTextField(String text, int min, int max) {
+			super(text);
+			this.min = min;
+			this.max = max;
+			addKeyListener( new MyKeyAdapter() );
+			addFocusListener( new MyFocusAdapter() );
+		} //생성자
+		
+		class MyKeyAdapter extends KeyAdapter {
+			@Override
+			public void keyReleased(KeyEvent e) {
+				switch ( e.getKeyCode() ) {
+					case KeyEvent.VK_ENTER: case KeyEvent.VK_SPACE: case KeyEvent.VK_BACK_SPACE:
+					case KeyEvent.VK_DELETE: case KeyEvent.VK_TAB:
+						setNum( getText() );
+						break;
+				}
+			}
+		} //MyKeyAdapter 클래스
+		
+		class MyFocusAdapter extends FocusAdapter {
+			@Override
+			public void focusLost(FocusEvent e) {
+				setNum( getText() );
+			}
+		} //MyFocusAdapter 클래스
+		
+		//setter
+		public void setNum(int num) {
+			this.num = clamp(num, min, max);
+			if (this.num >= max) {
+				setText("전체");
+			}
+			else {
+				setText( Integer.toString(this.num) );
+			}
+		}
+		
+		public void setNum(String num) {
+			int parsedNum = this.num;
+			try {
+				parsedNum = Integer.parseInt( num.replace(" ", "") );
+			}
+			catch(Exception e1) {}
+			setNum(parsedNum);
+		}
+		
+		public void setMin(int min) {
+			this.min = min;
+		}
+		
+		public void setMax(int max) {
+			this.max = max;
+		}
+		
+		//getter
+		public int getNum() {
+			return num;
+		}
+		
+		public int clamp(int num, int min, int max) {
+			if (num <= min) {
+				return min;
+			}
+			else if (num >= max) {
+				return max;
+			}
+			else {
+				return num;
+			}
+		}
+	}
+	
+	//공백 추가
+	private void addGap(int gap) {
+		pnlCenter.add( Box.createRigidArea( new Dimension(0, gap) ) );
+	}
+	
+	//그룹 라벨 추가
+	private void addGroupLabel(JLabel lbl) {
+		lbl.setFont(boldFont);
+		JPanel pnlTemp = new JPanel();
+		pnlTemp.setLayout( new GridLayout() );
+		pnlTemp.add(lbl);
+		pnlCenter.add(pnlTemp);
+		addGap(5);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		int num = tfRange.getNum();
+		if (e.getSource() == btnRangeSum) {
+			tfRange.setNum(num + 1);
+		}
+		else if (e.getSource() == btnRangeSum10) {
+			tfRange.setNum(num + 10);
+		}
+		else if (e.getSource() == btnRangeSub) {
+			tfRange.setNum(num - 1);
+		}
+		else if (e.getSource() == btnRangeSub10) {
+			tfRange.setNum(num - 10);
+		}
+		else if (e.getSource() == btnOk) {
+			boolean order = rbOrderRandom.isSelected();
+			int numQuestion = tfRange.getNum();
+			boolean notice = checkNotice.isSelected();
+
+			flagClose = true;
+			frame.startSolve(filePath, order, numQuestion, notice);
+			this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
+		}
+	}
+} //QOptionDlg 클래스

@@ -1,6 +1,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+
 import java.awt.image.*;
 import java.io.*;
 import java.util.ArrayList;
@@ -354,3 +355,55 @@ class ColorComboBox extends JComboBox<Color> {
 	}
 	
 } //JColorComboBox 클래스
+
+
+class CustomComboBox extends JComboBox<String> {
+	private static final long serialVersionUID = 1L;
+	private String[] aryItem;
+
+	@SuppressWarnings("unchecked")
+	public CustomComboBox(String[] aryItem) {
+		super();
+		DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>();
+		this.aryItem = aryItem;
+		
+		for (String k : aryItem) {
+			model.addElement(k);
+		}
+		setBackground( Frame.getColor() );
+		setFont( new Font(Frame.getFontName(), Font.BOLD, 20) );
+		setModel(model);
+		setRenderer( new Renderer() );
+		setOpaque(true);
+		setSelectedIndex(0);
+	} //생성자
+	
+	@Override
+	public void setSelectedItem(Object object) {
+		super.setSelectedItem(object);
+	}
+	
+	@SuppressWarnings("rawtypes")
+	class Renderer extends JLabel implements ListCellRenderer {
+		private static final long serialVersionUID = 1L;
+		
+		public Renderer() {
+			setOpaque(true);
+			setPreferredSize( new Dimension(0, 30) );
+		}
+		
+		@Override
+		public Component getListCellRendererComponent(JList list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus) {
+			setText( " " + (String)value );
+			setFont( new Font(Frame.getFontName(), Font.PLAIN, 15) );
+			setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+			setBackground( Frame.getColor() );
+			return this;
+		}
+	} //Renderer 클래스
+	
+	public String getText() {
+		return aryItem[ getSelectedIndex() ];
+	}
+} //CustomComboBox 클래스

@@ -3,6 +3,8 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import javax.swing.border.*;
 import java.io.*;
@@ -242,6 +244,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		public void actionPerformed(ActionEvent e) {
 			new WbOptionDlg(frame, filePath);
 		}
+		
+		public Workbook getWb() {
+			return wb;
+		}
 	} //WorkbookButton 클래스
 	
 	
@@ -259,7 +265,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			pnlBase.setLayout( new GridLayout() );
 			add(pnlBase);
 			
-			Image resizedImage = imageAddQuestion.getImage().getScaledInstance(70, 70,
+			Image resizedImage = imageAddQuestion.getImage().getScaledInstance(50, 50,
 					Image.SCALE_SMOOTH);
 			JLabel lblAddQuestion = new JLabel( new ImageIcon(resizedImage) );
 			pnlBase.add(lblAddQuestion);
@@ -277,7 +283,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			add(pnlBase);
 			
 			JLabel lblIndex = new JLabel(Integer.toString(index + 1) );
-			lblIndex.setFont( new Font(FONT_NAME, Font.BOLD, 40) );
+			lblIndex.setFont( new Font(FONT_NAME, Font.BOLD, 30) );
 			lblIndex.setPreferredSize( new Dimension(80, 80) );
 			pnlBase.add(lblIndex, BorderLayout.WEST);
 			
@@ -300,8 +306,8 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			setBorder(null);
 			setBackground(null);
 			setContentAreaFilled(false);
-			setPreferredSize( new Dimension(0, 100) );
-			setMaximumSize( new Dimension(10000, 100) );
+			setPreferredSize( new Dimension(0, 70) );
+			setMaximumSize( new Dimension(10000, 70) );
 			setVisible(true);
 			addActionListener(this);
 			addMouseListener(frame);
@@ -317,6 +323,76 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			}
 		}
 	} //QuestionButton 클래스
+	
+	
+	class SolveQuestion extends Thread implements ActionListener {
+		private String filePath;
+		private ArrayList<Question> listQuestion;
+		private boolean random;
+		private int questionNum;
+		private boolean notice;
+		private int index = 0;
+		
+		private JLabel lblQNum = new JLabel("No. 1");
+		private JSlider slQProgress = new JSlider();
+		private JLabel lblQTitle = new JLabel();
+		private JLabel lblQImage = new JLabel();
+		private JTextField tfQAnswer = new JTextField();
+		private JButton btnQAnswer = new JButton();
+		private ArrayList<JButton> listQOption = new ArrayList<>();
+		
+		public SolveQuestion(String filePath, boolean random, int questionNum, boolean notice) {
+			this.filePath = filePath;
+			listQuestion = FileIO.loadFile(filePath).getQuestion();
+			this.random = random;
+			this.questionNum = questionNum;
+			this.notice = notice;
+			
+			if (random) {
+				Collections.shuffle(listQuestion);
+			}
+			
+			lblQNum.setFont( new Font(FONT_NAME, Font.BOLD, 25) );
+			start();
+		} //생성자
+		
+		@Override
+		public void run() {
+			while (index < questionNum) {
+				//의도하지 않은 조작이면 풀이 종료
+				if (strMenu != "Solve") {
+					interrupt();
+				}
+				
+				pnlScroll.removeAll();
+				pnlScroll.setLayout( new BoxLayout(pnlScroll, BoxLayout.Y_AXIS) );
+				pnlScroll.setBorder( BorderFactory.createEmptyBorder(10, 10, 10, 10) );
+				
+				//객체 그리기
+				lblQNum.setText( "No. " + Integer.toString(index + 1) );
+				pnlScroll.add(lblQNum);
+				
+				System.out.println(index);
+				
+				c.repaint();
+				c.validate();
+				
+				try {
+					join();
+				}
+				catch (Exception e) {}
+			}
+			System.out.println("스레드 종료");
+			interrupt();
+		} //run()
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			System.out.println(index);
+			index++;
+			notify();
+		}
+	} //SolveQuestion 클래스
 	
 	
 	//getter
@@ -397,6 +473,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	 * @param type - 정렬 종류 [ 0 : 이름순 (오름차순), 1 : 이름순 (내림차순), 2 : 문제 많은순,
 	 * 3 : 문제 적은순, 4 : 정답률 높은순, 5 : 정답률 낮은순 ]
 	*/
+	@SuppressWarnings("unchecked")
 	public void sort(int type) {
 		pnlCenterMain.removeAll();
 		pnlScroll.removeAll();
@@ -404,23 +481,34 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		//문제집 버튼 ArrayList 정렬
 		switch (type) {
 		//TODO 문제집 정렬 기능 추가
-			case 0: //이름순 (오름차순)
-				System.out.println("이름순 (오름차순)");
+			case 0: case 1: //이름순
+				//오름차순 정렬
+				Collections.sort(listWbBtn, new Comparator<WorkbookButton>() {
+		            @Override
+		            public int compare(WorkbookButton btn1, WorkbookButton btn2) {
+		                return btn1.getWb().getName().compareTo( btn2.getWb().getName() );
+		            }
+		        });
+				
+				//내림 차순 정렬
+				if (type == 1) {
+					Collections.reverse(listWbBtn);
+				}
 				break;
-			case 1: //이름순 (내림차순)
-				System.out.println("이름순 (내림차순)");
-				break;
-			case 2: //문제 많은순
-				System.out.println("문제 많은순");
-				break;
-			case 3: //문제 적은순
-				System.out.println("문제 적은순");
-				break;
-			case 4: //정답률 높은순
-				System.out.println("정답률 높은순");
-				break;
-			default: //정답률 낮은순
-				System.out.println("정답률 낮은순");
+			case 2: case 3: //문제 개수
+				//적은순 정렬
+				Collections.sort(listWbBtn, new Comparator<WorkbookButton>() {
+		            @Override
+		            public int compare(WorkbookButton btn1, WorkbookButton btn2) {
+		                return Integer.toString( btn1.getWb().getQuestion().size() )
+		                		.compareTo( Integer.toString( btn2.getWb().getQuestion().size() ) );
+		            }
+		        });
+				
+				//많은순 정렬
+				if (type == 2) {
+					Collections.reverse(listWbBtn);
+				}
 				break;
 		} //switch()
 		
@@ -503,6 +591,11 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				}
 				pnlScroll.add(btnAddQuestion);
 				break;
+			case "SolveQuestion": //문제 풀이
+				lblMenuName.setText("문제 풀이");
+				pnlNorthEast.add(btnRevert);
+				pnlCenter.add(sPnl, BorderLayout.CENTER);
+				break;
 		} //switch()
 		
 		c.repaint();
@@ -514,6 +607,19 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	
 	public void setMenu(String menu) {
 		setMenu(menu, null);
+	}
+	
+	
+	/**
+	 * 문제 풀이 메뉴를 시작합니다.
+	 * @param filePath - 선택한 문제집이 저장된 경로
+	 * @param random - 문제 출제 순서의 랜덤 여부
+	 * @param questionNum - 출제할 문제의 개수
+	 * @param notice - 정답 알림 표시 여부
+	 */
+	public void startSolve(String filePath, boolean random, int questionNum, boolean notice) {
+		setMenu("Solve", filePath);
+		SolveQuestion ob = new SolveQuestion(filePath, random, questionNum, notice);
 	}
 	
 	
