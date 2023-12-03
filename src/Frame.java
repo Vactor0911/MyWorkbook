@@ -265,7 +265,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			pnlBase.setLayout( new GridLayout() );
 			add(pnlBase);
 			
-			Image resizedImage = imageAddQuestion.getImage().getScaledInstance(70, 70,
+			Image resizedImage = imageAddQuestion.getImage().getScaledInstance(50, 50,
 					Image.SCALE_SMOOTH);
 			JLabel lblAddQuestion = new JLabel( new ImageIcon(resizedImage) );
 			pnlBase.add(lblAddQuestion);
@@ -283,7 +283,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			add(pnlBase);
 			
 			JLabel lblIndex = new JLabel(Integer.toString(index + 1) );
-			lblIndex.setFont( new Font(FONT_NAME, Font.BOLD, 40) );
+			lblIndex.setFont( new Font(FONT_NAME, Font.BOLD, 30) );
 			lblIndex.setPreferredSize( new Dimension(80, 80) );
 			pnlBase.add(lblIndex, BorderLayout.WEST);
 			
@@ -306,8 +306,8 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			setBorder(null);
 			setBackground(null);
 			setContentAreaFilled(false);
-			setPreferredSize( new Dimension(0, 100) );
-			setMaximumSize( new Dimension(10000, 100) );
+			setPreferredSize( new Dimension(0, 70) );
+			setMaximumSize( new Dimension(10000, 70) );
 			setVisible(true);
 			addActionListener(this);
 			addMouseListener(frame);
@@ -323,6 +323,76 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			}
 		}
 	} //QuestionButton 클래스
+	
+	
+	class SolveQuestion extends Thread implements ActionListener {
+		private String filePath;
+		private ArrayList<Question> listQuestion;
+		private boolean random;
+		private int questionNum;
+		private boolean notice;
+		private int index = 0;
+		
+		private JLabel lblQNum = new JLabel("No. 1");
+		private JSlider slQProgress = new JSlider();
+		private JLabel lblQTitle = new JLabel();
+		private JLabel lblQImage = new JLabel();
+		private JTextField tfQAnswer = new JTextField();
+		private JButton btnQAnswer = new JButton();
+		private ArrayList<JButton> listQOption = new ArrayList<>();
+		
+		public SolveQuestion(String filePath, boolean random, int questionNum, boolean notice) {
+			this.filePath = filePath;
+			listQuestion = FileIO.loadFile(filePath).getQuestion();
+			this.random = random;
+			this.questionNum = questionNum;
+			this.notice = notice;
+			
+			if (random) {
+				Collections.shuffle(listQuestion);
+			}
+			
+			lblQNum.setFont( new Font(FONT_NAME, Font.BOLD, 25) );
+			start();
+		} //생성자
+		
+		@Override
+		public void run() {
+			while (index < questionNum) {
+				//의도하지 않은 조작이면 풀이 종료
+				if (strMenu != "Solve") {
+					interrupt();
+				}
+				
+				pnlScroll.removeAll();
+				pnlScroll.setLayout( new BoxLayout(pnlScroll, BoxLayout.Y_AXIS) );
+				pnlScroll.setBorder( BorderFactory.createEmptyBorder(10, 10, 10, 10) );
+				
+				//객체 그리기
+				lblQNum.setText( "No. " + Integer.toString(index + 1) );
+				pnlScroll.add(lblQNum);
+				
+				System.out.println(index);
+				
+				c.repaint();
+				c.validate();
+				
+				try {
+					join();
+				}
+				catch (Exception e) {}
+			}
+			System.out.println("스레드 종료");
+			interrupt();
+		} //run()
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			System.out.println(index);
+			index++;
+			notify();
+		}
+	} //SolveQuestion 클래스
 	
 	
 	//getter
@@ -521,7 +591,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				}
 				pnlScroll.add(btnAddQuestion);
 				break;
-			case "Solve": //문제 풀이
+			case "SolveQuestion": //문제 풀이
+				lblMenuName.setText("문제 풀이");
+				pnlNorthEast.add(btnRevert);
+				pnlCenter.add(sPnl, BorderLayout.CENTER);
 				break;
 		} //switch()
 		
@@ -534,6 +607,19 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	
 	public void setMenu(String menu) {
 		setMenu(menu, null);
+	}
+	
+	
+	/**
+	 * 문제 풀이 메뉴를 시작합니다.
+	 * @param filePath - 선택한 문제집이 저장된 경로
+	 * @param random - 문제 출제 순서의 랜덤 여부
+	 * @param questionNum - 출제할 문제의 개수
+	 * @param notice - 정답 알림 표시 여부
+	 */
+	public void startSolve(String filePath, boolean random, int questionNum, boolean notice) {
+		setMenu("Solve", filePath);
+		SolveQuestion ob = new SolveQuestion(filePath, random, questionNum, notice);
 	}
 	
 	
