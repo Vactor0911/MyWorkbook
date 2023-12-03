@@ -3,6 +3,8 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import javax.swing.border.*;
 import java.io.*;
@@ -242,6 +244,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		public void actionPerformed(ActionEvent e) {
 			new WbOptionDlg(frame, filePath);
 		}
+		
+		public Workbook getWb() {
+			return wb;
+		}
 	} //WorkbookButton 클래스
 	
 	
@@ -397,6 +403,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	 * @param type - 정렬 종류 [ 0 : 이름순 (오름차순), 1 : 이름순 (내림차순), 2 : 문제 많은순,
 	 * 3 : 문제 적은순, 4 : 정답률 높은순, 5 : 정답률 낮은순 ]
 	*/
+	@SuppressWarnings("unchecked")
 	public void sort(int type) {
 		pnlCenterMain.removeAll();
 		pnlScroll.removeAll();
@@ -404,17 +411,34 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		//문제집 버튼 ArrayList 정렬
 		switch (type) {
 		//TODO 문제집 정렬 기능 추가
-			case 0: //이름순 (오름차순)
-				System.out.println("이름순 (오름차순)");
+			case 0: case 1: //이름순
+				//오름차순 정렬
+				Collections.sort(listWbBtn, new Comparator<WorkbookButton>() {
+		            @Override
+		            public int compare(WorkbookButton btn1, WorkbookButton btn2) {
+		                return btn1.getWb().getName().compareTo( btn2.getWb().getName() );
+		            }
+		        });
+				
+				//내림 차순 정렬
+				if (type == 1) {
+					Collections.reverse(listWbBtn);
+				}
 				break;
-			case 1: //이름순 (내림차순)
-				System.out.println("이름순 (내림차순)");
-				break;
-			case 2: //문제 많은순
-				System.out.println("문제 많은순");
-				break;
-			case 3: //문제 적은순
-				System.out.println("문제 적은순");
+			case 2: case 3: //문제 개수
+				//적은순 정렬
+				Collections.sort(listWbBtn, new Comparator<WorkbookButton>() {
+		            @Override
+		            public int compare(WorkbookButton btn1, WorkbookButton btn2) {
+		                return Integer.toString( btn1.getWb().getQuestion().size() )
+		                		.compareTo( Integer.toString( btn2.getWb().getQuestion().size() ) );
+		            }
+		        });
+				
+				//많은순 정렬
+				if (type == 2) {
+					Collections.reverse(listWbBtn);
+				}
 				break;
 		} //switch()
 		

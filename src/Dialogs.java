@@ -357,7 +357,6 @@ class WbSortDlg extends Dialogs implements ActionListener {
 			btn.addActionListener(this);
 			btn.addMouseListener(adapter);
 			pnlCenter.add(btn);
-			System.out.println(btn.getText() );
 		}
 		
 		pack();
