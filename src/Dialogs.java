@@ -1077,39 +1077,41 @@ class QuestionDlg extends Dialogs implements ActionListener {
 		pnlOption.setMinimumSize( new Dimension() );
 		pnlCenter.add(pnlOption);
 		
-		if(cbCategory.getSelectedIndex() == 0) {
-			addGroupLabel(pnlOption, lblWrongAns);
-			pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
-			
-			HintTextField htf = new HintTextField("오답을 입력하세요");
-			htf.setPreferredSize( new Dimension(400, 40) );
-			htf.setMinimumSize( new Dimension(400, 40) );
-			htf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
-			htf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
-			htf.addKeyListener(keyAdapter);
-			if (!flagAdd) {
-				htf.setText( question.getAryOption()[0] );
+		addGroupLabel(pnlOption, lblWrongAns);
+		pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
+		
+		HintTextField htf = new HintTextField("오답을 입력하세요");
+		htf.setPreferredSize( new Dimension(400, 40) );
+		htf.setMinimumSize( new Dimension(400, 40) );
+		htf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+		htf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+		htf.addKeyListener(keyAdapter);
+		if (!flagAdd && cbCategory.getSelectedIndex() == 0) {
+			htf.setText( question.getAryOption()[0] );
+		}
+		listOption.add(htf);
+		pnlOption.add(htf);
+		
+	
+		if (!flagAdd && cbCategory.getSelectedIndex() == 0) {
+			String[] aryOption = question.getAryOption();
+			System.out.println(aryOption.length);
+			for (int i=1; i<aryOption.length; i++) {
+				pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
+				htf = new HintTextField("오답을 입력하세요 (선택)");
+				htf.setPreferredSize( new Dimension(400, 40) );
+				htf.setMinimumSize( new Dimension(400, 40) );
+				htf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+				htf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
+				htf.setText( aryOption[i] );
+				htf.addKeyListener(keyAdapter);
+				htf.focusLost(null);
+				listOption.add(htf);
+				pnlOption.add(htf);
 			}
-			listOption.add(htf);
-			pnlOption.add(htf);
-			
-			if (!flagAdd) {
-				String[] aryOption = question.getAryOption();
-				System.out.println(aryOption.length);
-				for (int i=1; i<aryOption.length; i++) {
-					pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
-					htf = new HintTextField("오답을 입력하세요 (선택)");
-					htf.setPreferredSize( new Dimension(400, 40) );
-					htf.setMinimumSize( new Dimension(400, 40) );
-					htf.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
-					htf.setBorder( BorderFactory.createLineBorder(Color.BLACK, 1, false) );
-					htf.setText( aryOption[i] );
-					htf.addKeyListener(keyAdapter);
-					htf.focusLost(null);
-					listOption.add(htf);
-					pnlOption.add(htf);
-				}
-			}
+		}
+		if(cbCategory.getSelectedIndex() == 1) {
+			pnlOption.setVisible(false);
 		}
 		addGap(15);
 		
