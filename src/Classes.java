@@ -296,7 +296,7 @@ class ColorComboBox extends JComboBox<Color> {
 	private static final long serialVersionUID = 1L;
 	private static final Color PINK = new Color(244, 153, 192);
 	private static final Color ORANGE = new Color(247, 148, 30);
-	private static final Color YELLOW = new Color(255, 247, 154);
+	private static final Color YELLOW = new Color(248, 222, 34);
 	private static final Color GREEN = new Color(171, 211, 116);
 	private static final Color BLUE = new Color(109, 207, 246);
 	
@@ -351,7 +351,12 @@ class ColorComboBox extends JComboBox<Color> {
 	}
 	
 	public int getColorIndex(Color color) {
-		return hmColor.get(color);
+		if (hmColor.get(color) == null) {
+			return -1;
+		}
+		else {
+			return hmColor.get(color);
+		}
 	}
 	
 } //JColorComboBox 클래스

@@ -590,6 +590,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 			jfc.setAcceptAllFileFilterUsed(false);
 			jfc.setFileHidingEnabled(true);
 			jfc.setApproveButtonText("열기");
+			jfc.setCurrentDirectory( FileSystemView.getFileSystemView().getHomeDirectory() );
 			FileNameExtensionFilter filter = new FileNameExtensionFilter("문제집 파일 (*.workbook)",
 					"workbook");
 			jfc.setFileFilter(filter);
@@ -720,7 +721,6 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		//TODO 버튼 클릭 이벤트 기능 구현
 		if (e.getSource() == btnSolve) { //문제 풀이
 			if (wb.getQuestion().size() > 0) {
 				this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
@@ -929,6 +929,7 @@ class WbInfoDlg extends Dialogs implements ActionListener {
 				FileIO.saveFile(filePath, wb);
 				lblTitle.setText( wb.getName() );
 				frame.reloadWb();
+				tfColor.setBackground( cbColor.getColor() );
 			}
 		}
 		else { //취소
@@ -1344,12 +1345,16 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			
 			if (result == JFileChooser.APPROVE_OPTION) { //파일이 정상적으로 선택됨
 				String imagePath = jfc.getSelectedFile().toString();
-				ImageIcon imageIcon = new ImageIcon(imagePath);
-				Image resizedImage = imageIcon.getImage().getScaledInstance(100, 100,
+				image = new ImageIcon(imagePath); //이미지 저장
+				//화면 표시용 크기 조절된 이미지
+				int width = image.getIconWidth();
+				int height = image.getIconHeight();
+				int maxSize = Math.max(width, height);
+				double multiplier = (double)150 / (double)maxSize;
+				Image resizedImage = image.getImage().getScaledInstance(
+						(int)(width * multiplier), (int)(height * multiplier),
 						Image.SCALE_SMOOTH);
-				image = new ImageIcon(resizedImage);
-				
-				lblPicture.setIcon(image);
+				lblPicture.setIcon( new ImageIcon(resizedImage) );
 				pnlCenter.validate();
 				pack();
 			}
@@ -1386,8 +1391,8 @@ class QOptionDlg extends Dialogs implements ActionListener {
 	private MyTextField tfRange = new MyTextField("전체");
 	private JPanel pnlRange = new JPanel();
 	
-	private JLabel lblNotice = new JLabel("정답 알림 표시");
-	private JCheckBox checkNotice = new JCheckBox("알림 표시");
+	private JLabel lblNotice = new JLabel("정답 및 해설");
+	private JCheckBox checkNotice = new JCheckBox("정답 여부 및 해설 표시");
 	
 	private JButton btnOk = new JButton("풀이 시작");
 
@@ -1628,3 +1633,116 @@ class QOptionDlg extends Dialogs implements ActionListener {
 		}
 	}
 } //QOptionDlg 클래스
+
+
+class QExplainDlg extends JDialog implements ActionListener {
+	private static final long serialVersionUID = 1L;
+	private static final ImageIcon imageCorrect = new ImageIcon("images/CorrectAnswer.png");
+	private static final ImageIcon imageWrong = new ImageIcon("images/WrongAnswer.png");
+	
+	private Frame frame;
+	private JPanel pnlMain = new JPanel();
+	private JPanel pnlNorth = new JPanel();
+	private JPanel pnlCenter = new JPanel();
+	private JLabel lblCorrectImg = new JLabel();
+	private JLabel lblCorrect = new JLabel();
+	private JLabel lblAnswer = new JLabel("", SwingConstants.CENTER);
+	private JLabel lblExplain = new JLabel("", SwingConstants.CENTER);
+	private JButton btnQNext = new JButton("다음 문제");
+	
+	public QExplainDlg(Frame frame, Question question, boolean correct) {
+		super(frame, "", false);
+		this.frame = frame;
+		setTitle("문제 해설");
+		setSize(500, 100);
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		setResizable(false);
+		setMaximumSize( new Dimension(500, 800) );
+		addWindowListener( new MyWindowAdapter() );
+		
+		setContentPane(pnlMain);
+		pnlMain.setLayout( new BorderLayout(0, 10) );
+		pnlMain.setBorder( BorderFactory.createEmptyBorder(10, 10, 10, 10) );
+		
+		pnlNorth.setLayout( new FlowLayout(FlowLayout.CENTER, 5, 0) );
+		pnlMain.add(pnlNorth, BorderLayout.NORTH);
+		
+		//정답 | 오답 아이콘, 라벨
+		Image image = null;
+		if (correct) {
+			image = imageCorrect.getImage();
+			lblCorrect.setText("정답입니다!");
+		}
+		else {
+			image = imageWrong.getImage();
+			lblCorrect.setText("오답입니다!");
+		}
+		image = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+		lblCorrectImg.setIcon( new ImageIcon(image) );
+		pnlNorth.add(lblCorrectImg);
+		lblCorrect.setFont( new Font(Frame.getFontName(), Font.BOLD, 20) );
+		pnlNorth.add(lblCorrect);
+		
+		pnlCenter.setLayout( new BorderLayout(0, 10) );
+		pnlMain.add(pnlCenter, BorderLayout.CENTER);
+		
+		//정답 공개
+		JPanel pnlTemp = new JPanel();
+		pnlTemp.setLayout( new GridLayout() );
+		lblAnswer.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+		lblAnswer.setText("<html><p>" + question.getAnswer() + "</p></html>");
+		pnlTemp.add(lblAnswer);
+		pnlCenter.add(pnlTemp, BorderLayout.NORTH);
+		
+		//해설 라벨
+		if ( !question.getExplain().isEmpty() ) {
+			lblExplain.setText("<html><p>" + question.getExplain() + "</p></html>");
+			lblExplain.setFont( new Font(Frame.getFontName(), Font.PLAIN, 20) );
+			Border borderEmpty = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+			Border borderLine = BorderFactory.createLineBorder(Color.BLACK, 1, true);
+			Border borderTitled = BorderFactory.createTitledBorder( 
+					BorderFactory.createCompoundBorder(borderLine, borderEmpty), "해설",
+					TitledBorder.LEFT, TitledBorder.TOP, new Font(Frame.getFontName(), Font.BOLD, 16)
+					);
+			lblExplain.setBorder(borderTitled);
+			pnlCenter.add(lblExplain, BorderLayout.CENTER);
+		}
+		
+		//다음 문제 버튼
+		btnQNext.setFont( new Font(Frame.getFontName(), Font.BOLD, 20) );
+		btnQNext.setPreferredSize( new Dimension(0, 50) );
+		btnQNext.setMinimumSize( new Dimension(0, 50) );
+		btnQNext.addActionListener(this);
+		pnlMain.add(btnQNext, BorderLayout.SOUTH);
+		
+		pack();
+		setVisible(true);
+		
+		int height = question.getAnswer().length() + question.getExplain().length();
+		setSize( new Dimension(500, getHeight() + height) );
+		
+		//대화상자를 화면 정 중앙에 위치
+		Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
+		int x = res.width / 2 - getWidth() / 2;
+		int y = res.height / 2 - getHeight() / 2;
+		setLocation(x, y);
+	} //생성자
+	
+	public void exit() {
+		frame.showNextQuestion();
+		this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
+	}
+	
+	class MyWindowAdapter extends WindowAdapter {
+		@Override
+		public void windowClosed(WindowEvent e) {
+			exit();
+		}
+	} //MyWindowAdapter 클래스	
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		this.dispatchEvent( new WindowEvent(this, WindowEvent.WINDOW_CLOSING) ); //대화상자 종료
+	}
+} //QExplainDlg 클래스
+
