@@ -218,7 +218,6 @@ class FileIO implements Serializable {
     	Object obj = null;
         try ( FileInputStream fileInPut = new FileInputStream(filePath);
              ObjectInputStream objInput = new ObjectInputStream(fileInPut) ) {
-        	String extension = filePath.substring( filePath.lastIndexOf(".") + 1 );
             obj = objInput.readObject();
         }
         catch (Exception e) {

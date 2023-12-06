@@ -1,7 +1,6 @@
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
-import java.awt.geom.Arc2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,15 +15,15 @@ import java.time.LocalTime;
 public class Frame extends JFrame implements ActionListener, MouseListener, KeyListener {
 	private static final long serialVersionUID = 1L;
 	//이미지
-	private static final ImageIcon imageProgramIcon = new ImageIcon("images/ProgramIcon.png");
-	private static final ImageIcon imageWorkbook = new ImageIcon("images/Workbook.png");
-	private static final ImageIcon imageReview = new ImageIcon("images/Review.png");
-	private static final ImageIcon imageHistory = new ImageIcon("images/History.png");
-	private static final ImageIcon imageSetting = new ImageIcon("images/Setting.png");
-	private static final ImageIcon imageSort = new ImageIcon("images/Sort.png");
-	private static final ImageIcon imageAddWorkbook = new ImageIcon("images/AddWorkbook.png");
-	private static final ImageIcon imageRevert = new ImageIcon("images/Revert.png");
-	private static final ImageIcon imageAddQuestion = new ImageIcon("images/AddQuestion.png");
+	private ImageIcon imageProgramIcon = new ImageIcon( getClass().getResource("images/ProgramIcon.png") );
+	private final ImageIcon imageWorkbook = new ImageIcon( getClass().getResource("images/Workbook.png") );
+	private final ImageIcon imageReview = new ImageIcon( getClass().getResource("images/Review.png") );
+	private final ImageIcon imageHistory = new ImageIcon( getClass().getResource("images/History.png") );
+	private final ImageIcon imageSetting = new ImageIcon( getClass().getResource("images/Setting.png") );
+	private final ImageIcon imageSort = new ImageIcon( getClass().getResource("images/Sort.png") );
+	private final ImageIcon imageAddWorkbook = new ImageIcon( getClass().getResource("images/AddWorkbook.png") );
+	private final ImageIcon imageRevert = new ImageIcon( getClass().getResource("images/Revert.png") );
+	private final ImageIcon imageAddQuestion = new ImageIcon( getClass().getResource("images/AddQuestion.png") );
 	
 	private static final String FONT_NAME = "맑은 고딕";
 	private static final Color COLOR = Color.LIGHT_GRAY;
@@ -72,8 +71,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setMinimumSize( new Dimension(500, 700) );
 		setIconImage( imageProgramIcon.getImage() );
-		
-		
 		
 		//프레임을 화면 정중앙에 위치
 		Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
@@ -334,7 +331,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	
 	
 	class SolveQuestion implements ActionListener {
-		private String filePath;
 		private Workbook workbook;
 		private ArrayList<Question> listQuestion;
 		private int questionNum;
@@ -345,7 +341,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		
 		private String strTime;
 		private ArrayList<Answer> listAnswer = new ArrayList<>();
-		private Review review = new Review();
 		private Question question = null;
 		
 		private JPanel pnlQMain = new JPanel();
@@ -361,12 +356,10 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		private JTextField tfQAnswer = new JTextField();
 		private JButton btnQSubmit = new JButton("정답 제출");
 		
-		private ArrayList<JButton> listQOption = new ArrayList<>();
 		private QExplainDlg dialogObj = null;
 		
 		public SolveQuestion(String filePath, boolean random, int questionNum, boolean notice) {
 			setResizable(false);
-			this.filePath = filePath;
 			workbook = FileIO.loadFile(filePath);
 			listQuestion = workbook.getQuestion();
 			this.questionNum = questionNum;
@@ -611,12 +604,11 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	
 	
 	class SolveResult {
-		private static final ImageIcon imageCorrect = new ImageIcon("images/CorrectAnswer.png");
-		private static final ImageIcon imageWrong = new ImageIcon("images/WrongAnswer.png");
+		private final ImageIcon imageCorrect = new ImageIcon( getClass().getResource("images/CorrectAnswer.png") );
+		private final ImageIcon imageWrong = new ImageIcon( getClass().getResource("images/WrongAnswer.png") );
 		
 		private JScrollPane sPnlQ = new JScrollPane();
 		private JPanel pnlBase = new JPanel();
-		private JPanel pnlSouth = new JPanel();
 		private JPanel pnlArcBase = new JPanel();
 		private Arc pnlArc = null;
 		private JLabel lblCorrect = new JLabel("정답 : ", SwingConstants.CENTER);
@@ -945,10 +937,13 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	public void setMenu(String menu, String filePath) {
 		//풀이하고 있던 문제가 있던 경우
 		if (solve != null && strMenu == "SolveQuestion") {
-			if ( MessageBox.show(this, "문제 풀이를 종료하시겠습니까?", MessageBox.btnYES_NO,
-					MessageBox.iconQUESTION) != MessageBox.idYES ) {
-				return;
+			int answer = MessageBox.show(this, "문제 풀이를 종료하시겠습니까?", MessageBox.btnYES_NO,
+					MessageBox.iconQUESTION);
+			if ( answer == MessageBox.idYES ) {
+				strMenu = "SolveResult";
+				setMenu("SolveResult");
 			}
+			return;
 		}
 		
 		//객체 초기화

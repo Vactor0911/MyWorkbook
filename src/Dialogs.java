@@ -27,10 +27,10 @@ class MessageBox extends JDialog implements ActionListener {
 	static final int iconEXCLAMATION = 3;
 	static final int iconERROR = 4;
 	
-	private final ImageIcon iconInformation = new ImageIcon("images/Information.png");
-	private final ImageIcon iconQuestion = new ImageIcon("images/Question.png");
-	private final ImageIcon iconExclamation = new ImageIcon("images/Exclamation.png");
-	private final ImageIcon iconError = new ImageIcon("images/Error.png");
+	private final ImageIcon iconInformation = new ImageIcon( getClass().getResource("images/Information.png") );
+	private final ImageIcon iconQuestion = new ImageIcon( getClass().getResource("images/Question.png") );
+	private final ImageIcon iconExclamation = new ImageIcon( getClass().getResource("images/Exclamation.png") );
+	private final ImageIcon iconError = new ImageIcon( getClass().getResource("images/Error.png") );
 	
 	private final Font font = new Font(Frame.getFontName(), Font.PLAIN, 15);
 	
@@ -315,10 +315,10 @@ public class Dialogs extends JDialog {
 class WbSortDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	
-	private final ImageIcon imgSortNameAsc = new ImageIcon("images/SortNameAscend.png");
-	private final ImageIcon imgSortNameDesc = new ImageIcon("images/SortNameDescend.png");
-	private final ImageIcon imgSortSizeAsc = new ImageIcon("images/SortSizeAscend.png");
-	private final ImageIcon imgSortSizeDesc = new ImageIcon("images/SortSizeDescend.png");
+	private final ImageIcon imgSortNameAsc = new ImageIcon( getClass().getResource("images/SortNameAscend.png") );
+	private final ImageIcon imgSortNameDesc = new ImageIcon( getClass().getResource("images/SortNameDescend.png") );
+	private final ImageIcon imgSortSizeAsc = new ImageIcon( getClass().getResource("images/SortSizeAscend.png") );
+	private final ImageIcon imgSortSizeDesc = new ImageIcon( getClass().getResource("images/SortSizeDescend.png") );
 	
 	private JButton btnSortNameAsc = new JButton("이름순 (오른차순)");
 	private JButton btnSortNameDesc = new JButton("이름순 (내림차순)");
@@ -333,7 +333,7 @@ class WbSortDlg extends Dialogs implements ActionListener {
 	private MyMouseAdapter adapter = new MyMouseAdapter();
 	
 	public WbSortDlg(Frame frame) {
-		super(frame, "문제집 정렬", 400, 600);
+		super(frame, "문제집 정렬", 300, 400);
 		this.frame = frame;
 		lblTitle.setText("정렬");
 		
@@ -359,7 +359,6 @@ class WbSortDlg extends Dialogs implements ActionListener {
 			pnlCenter.add(btn);
 		}
 		
-		pack();
 		setVisible(true);
 		moveToMid();
 	} //생성자
@@ -627,11 +626,11 @@ class WbAddDlg extends Dialogs implements ActionListener {
 
 class WbOptionDlg extends Dialogs implements ActionListener {
 	private static final long serialVersionUID = 1L;
-	private final ImageIcon imageSolve = new ImageIcon("images/WbSolving.png");
-	private final ImageIcon imageEdit = new ImageIcon("images/WbEdit.png");
-	private final ImageIcon imageExport = new ImageIcon("images/WbExport.png");
-	private final ImageIcon imageDelete = new ImageIcon("images/Delete.png");
-	private final ImageIcon imageInfo = new ImageIcon("images/Information.png");
+	private final ImageIcon imageSolve = new ImageIcon( getClass().getResource("images/WbSolving.png") );
+	private final ImageIcon imageEdit = new ImageIcon( getClass().getResource("images/WbEdit.png") );
+	private final ImageIcon imageExport = new ImageIcon( getClass().getResource("images/WbExport.png") );
+	private final ImageIcon imageDelete = new ImageIcon( getClass().getResource("images/Delete.png") );
+	private final ImageIcon imageInfo = new ImageIcon( getClass().getResource("images/Information.png") );
 	
 	private Frame frame;
 	private String filePath;
@@ -948,7 +947,7 @@ class QuestionDlg extends Dialogs implements ActionListener {
 	static final int idADD = 1;
 	static final int idEDIT = 2;
 	private final Font boldFont = new Font(Frame.getFontName(), Font.BOLD, 20);
-	private final ImageIcon imagePicture = new ImageIcon("images/Picture.png");
+	private final ImageIcon imagePicture = new ImageIcon( getClass().getResource("images/Picture.png") );
 	private final Image resizedImage = imagePicture.getImage().getScaledInstance(30, 30,
 			Image.SCALE_SMOOTH);
 	
@@ -1335,6 +1334,7 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			}
 		}
 		else { //이미지 선택
+			UIManager.put("FileChooser.cancelButtonText","취소");
 			JFileChooser jfc = new JFileChooser();
 			jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			jfc.setAcceptAllFileFilterUsed(false);
@@ -1342,6 +1342,8 @@ class QuestionDlg extends Dialogs implements ActionListener {
 			FileNameExtensionFilter filter = new FileNameExtensionFilter(
 					"이미지 파일 (*.jpg, *.jpeg, *.png)", "jpg", "jpeg", "png");
 			jfc.setFileFilter(filter);
+			jfc.setApproveButtonText("선택");
+			jfc.setDialogTitle("이미지 선택");
 			
 			int result = jfc.showOpenDialog(null); //파일 선택기 열기
 			
@@ -1639,8 +1641,8 @@ class QOptionDlg extends Dialogs implements ActionListener {
 
 class QExplainDlg extends JDialog implements ActionListener {
 	private static final long serialVersionUID = 1L;
-	private static final ImageIcon imageCorrect = new ImageIcon("images/CorrectAnswer.png");
-	private static final ImageIcon imageWrong = new ImageIcon("images/WrongAnswer.png");
+	private final ImageIcon imageCorrect = new ImageIcon( getClass().getResource("images/CorrectAnswer.png") );
+	private final ImageIcon imageWrong = new ImageIcon( getClass().getResource("images/WrongAnswer.png") );
 	
 	private Frame frame;
 	private JPanel pnlMain = new JPanel();
