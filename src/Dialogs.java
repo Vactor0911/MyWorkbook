@@ -361,6 +361,7 @@ class WbSortDlg extends Dialogs implements ActionListener {
 		
 		pack();
 		setVisible(true);
+		moveToMid();
 	} //생성자
 	
 	class MyMouseAdapter extends MouseAdapter {
@@ -594,6 +595,7 @@ class WbAddDlg extends Dialogs implements ActionListener {
 			FileNameExtensionFilter filter = new FileNameExtensionFilter("문제집 파일 (*.workbook)",
 					"workbook");
 			jfc.setFileFilter(filter);
+			jfc.setDialogTitle("문제집 불러오기");
 			
 			int result = jfc.showOpenDialog(null); //파일 선택기 열기
 			
@@ -744,6 +746,7 @@ class WbOptionDlg extends Dialogs implements ActionListener {
 			jfc.setFileHidingEnabled(true);
 			jfc.setCurrentDirectory( FileSystemView.getFileSystemView().getHomeDirectory() );
 			jfc.setApproveButtonText("저장");
+			jfc.setDialogTitle("문제집 내보내기");
 			
 			int result = jfc.showOpenDialog(null); //파일 선택기 열기
 			
@@ -1087,7 +1090,6 @@ class QuestionDlg extends Dialogs implements ActionListener {
 	
 		if (!flagAdd && cbCategory.getSelectedIndex() == 0) {
 			String[] aryOption = question.getAryOption();
-			System.out.println(aryOption.length);
 			for (int i=1; i<aryOption.length; i++) {
 				pnlOption.add( Box.createRigidArea( new Dimension(0, 5) ) );
 				htf = new HintTextField("오답을 입력하세요 (선택)");

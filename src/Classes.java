@@ -139,6 +139,55 @@ class Question implements Serializable {
 } //Question 클래스
 
 
+class Review implements Serializable {
+	private static final long serialVersionUID = 1L;
+	
+	private HashMap<Question, String> dictReview = new HashMap<>();
+	
+	public void setDictReview(HashMap<Question, String> dictReview) {
+		this.dictReview = dictReview;
+	}
+	
+	public HashMap<Question, String> getDictReview() {
+		return dictReview;
+	}
+	
+	@Override
+	public String toString() {
+        StringBuffer buffer = new StringBuffer();
+        buffer.append(dictReview);
+        buffer.append("\n");
+        return buffer.toString();
+    }
+} //Review 클래스
+
+
+class Answer {
+	private Question question;
+	private String answer;
+	private boolean correct;
+	
+	public Answer(Question question, String answer, boolean correct) {
+		this.question = question;
+		this.answer = answer;
+		this.correct = correct;
+	}
+	
+	public Question getQuestion() {
+		return question;
+	}
+	
+	public String getAnswer() {
+		return answer;
+	}
+	
+	public boolean isCorrect() {
+		return correct;
+	}
+	
+} //Answer 클래스
+
+
 class FileIO implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -148,11 +197,11 @@ class FileIO implements Serializable {
 	 * @param wb - Workbook 객체
 	 * @return 파일 저장 성공시 true 반환, 실패시 false 반환
 	*/
-    public static boolean saveFile(String filePath, Workbook wb) {
+    public static boolean saveFile(String filePath, Object obj) {
         try {
     		FileOutputStream fileOutput = new FileOutputStream(filePath);
 			ObjectOutputStream objOutput = new ObjectOutputStream(fileOutput);
-        	objOutput.writeObject(wb);
+        	objOutput.writeObject(obj);
             
             fileOutput.close();
             objOutput.close();
@@ -163,6 +212,20 @@ class FileIO implements Serializable {
             return false;
         }
     }
+    
+    
+    public static Object load(String filePath) {
+    	Object obj = null;
+        try ( FileInputStream fileInPut = new FileInputStream(filePath);
+             ObjectInputStream objInput = new ObjectInputStream(fileInPut) ) {
+        	String extension = filePath.substring( filePath.lastIndexOf(".") + 1 );
+            obj = objInput.readObject();
+        }
+        catch (Exception e) {
+        	System.out.println("파일을 불러오지 못했습니다.");
+        }
+        return obj;
+    }
    
 
     /**
@@ -171,15 +234,11 @@ class FileIO implements Serializable {
 	 * @return 파일 불러오기 성공시 Workbook 객체 반환, 실패시 null 반환
 	*/
     public static Workbook loadFile(String filePath) {
-    	Workbook wb = null;
-        try ( FileInputStream fileInPut = new FileInputStream(filePath);
-             ObjectInputStream objInput = new ObjectInputStream(fileInPut) ) {
-            wb = (Workbook)objInput.readObject();
-        }
-        catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return wb;
+        return (Workbook)( load(filePath) );
+    }
+    
+    public static Review loadReview(String filePath) {
+    	return (Review)( load(filePath) );
     }
 } //DataObject 클래스
 

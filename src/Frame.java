@@ -1,6 +1,7 @@
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
+import java.awt.geom.Arc2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,6 +10,8 @@ import java.util.HashMap;
 
 import javax.swing.border.*;
 import java.io.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class Frame extends JFrame implements ActionListener, MouseListener, KeyListener {
 	private static final long serialVersionUID = 1L;
@@ -69,6 +72,8 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setMinimumSize( new Dimension(500, 700) );
 		setIconImage( imageProgramIcon.getImage() );
+		
+		
 		
 		//프레임을 화면 정중앙에 위치
 		Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
@@ -330,12 +335,18 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	
 	class SolveQuestion implements ActionListener {
 		private String filePath;
+		private Workbook workbook;
 		private ArrayList<Question> listQuestion;
 		private int questionNum;
 		private boolean notice;
 		private int index = -1;
 		private int pnlHeight = 0;
 		private boolean flagAnswer = true;
+		
+		private String strTime;
+		private ArrayList<Answer> listAnswer = new ArrayList<>();
+		private Review review = new Review();
+		private Question question = null;
 		
 		private JPanel pnlQMain = new JPanel();
 		private JPanel pnlQNorth = new JPanel();
@@ -354,10 +365,17 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		private QExplainDlg dialogObj = null;
 		
 		public SolveQuestion(String filePath, boolean random, int questionNum, boolean notice) {
+			setResizable(false);
 			this.filePath = filePath;
-			listQuestion = FileIO.loadFile(filePath).getQuestion();
+			workbook = FileIO.loadFile(filePath);
+			listQuestion = workbook.getQuestion();
 			this.questionNum = questionNum;
 			this.notice = notice;
+			
+			//시작 시간
+			strTime = LocalDate.now( ) + "_" + LocalTime.now().toString().split("\\.")[0];
+			strTime = strTime.replace("-", "_");
+			strTime = strTime.replace(":", "_");
 			
 			//랜덤 선택시 출제 순서 랜덤화
 			if (random) {
@@ -381,7 +399,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			
 			//스크롤 패널
 			sPnlQ.setViewportView(pnlQMain);
-			pnlQMain.setPreferredSize( new Dimension( pnlCenter.getWidth(), 10000) );
+			pnlQMain.setPreferredSize( new Dimension( pnlCenter.getWidth(), 100) );
 			sPnlQ.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 			sPnlQ.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 			sPnlQ.getVerticalScrollBar().setUnitIncrement(20);
@@ -410,28 +428,43 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			pnlQCenter.setLayout( new BoxLayout(pnlQCenter, BoxLayout.Y_AXIS) );
 			pnlQMain.add(pnlQCenter);
 			
+			repaint();
+			validate();
+			
 			showNextQuestion(); //문제를 화면에 출력
 		} //생성자
 		
 		public void showNextQuestion() {
 			index++;
 			flagAnswer = true;
+			
+			//문제 개수가 지정된 개수를 넘었을 때
+			if (index >= questionNum) {
+				stop();
+				return;
+			}
+			
 			//스크롤 패널 초기화
 			pnlQCenter.removeAll();
-			Question question = listQuestion.get(index);
+			pnlQMain.setPreferredSize( new Dimension( pnlCenter.getWidth(), 10000) );
+			question = listQuestion.get(index);
 			sPnlQ.getVerticalScrollBar().setValue(0);
 			tfQAnswer.setText("");
+			lblQImage.setIcon(null);
+			repaint();
+			validate();
 			
 			//문제 번호 및 진행도
 			lblQNum.setText( "No. " + Integer.toString(index + 1) );
 			slQProgress.setValue(index + 1);
 			
 			//문제
-			String strTitle = question.getTitle() + question.getTitle() + question.getTitle() + question.getTitle();
+			String strTitle = question.getTitle();
 			lblQTitle.setText("<html><p>" + strTitle + "</p></html>");
 			pnlQCenter.add(lblQTitle);
 			addGap(15);
 			
+			repaint();
 			validate();
 			
 			//사진
@@ -449,17 +482,26 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				addGap(15);
 			}
 			
+			repaint();
+			validate();
+			
 			//답안
+			ArrayList<JButton> listBtn = new ArrayList<>();
 			if (question.getCategory() == 0) { //선택형 문제
 				//리스트에 버튼 삽입
-				ArrayList<JButton> listBtn = new ArrayList<>();
 				btnQAnswer.setText("<html><p>" + question.getAnswer() + "</p></html>");
 				listBtn.add(btnQAnswer);
 				for ( String k :question.getAryOption() ) {
 					if (k == null) {
 						continue;
 					}
-					listBtn.add( new JButton("<html><p>" + k + "</p></html>") );
+					JButton btn = new JButton("<html><p>" + k + "</p></html>");
+					Dimension size = new Dimension(0, 20);
+					btn.setPreferredSize(size);
+					btn.setMinimumSize(size);
+					btn.setFont( new Font(FONT_NAME, Font.PLAIN, 20) );
+					btn.addActionListener(this);
+					listBtn.add(btn);
 				}
 				
 				//리스트 셔플
@@ -467,11 +509,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				
 				//패널에 버튼 삽입
 				for (JButton btn : listBtn) {
-					Dimension size = new Dimension(0, 20);
-					btn.setPreferredSize(size);
-					btn.setMinimumSize(size);
-					btn.setFont( new Font(FONT_NAME, Font.PLAIN, 20) );
-					btn.addActionListener(this);
 					pnlQCenter.add(btn);
 					addGap(10);
 				}
@@ -489,23 +526,22 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				btnQSubmit.setFont( new Font(FONT_NAME, Font.PLAIN, 20) );
 				pnlQCenter.add(btnQSubmit);
 			}
-			System.out.println("현재 문제 >> " + index);
 			
-			repaint();
-			validate();
+			frame.repaint();
+			frame.validate();
 			
 			pnlHeight = pnlQNorth.getHeight() + pnlQCenter.getHeight();
-			pnlHeight += lblQTitle.getHeight() * Math.ceil(lblQTitle.getText().length() / 20);
 			if (question.getAryOption() != null) {
-				for ( String k :question.getAryOption() ) {
-					if (k != null) {
-						pnlHeight += Math.ceil(k.length() / 20);
+				for ( JButton k : listBtn ) {
+					if ( k.isValid() ) {
+						pnlHeight += k.getHeight();
 					}
 				}
 			}
 			pnlQMain.setPreferredSize( new Dimension(pnlCenter.getWidth(), pnlHeight) );
-			
-			System.out.println("다음 문제 >> " + index);
+			pnlQMain.setMinimumSize( new Dimension(pnlCenter.getWidth(), pnlHeight) );
+			repaint();
+			validate();
 		} //showNextQuestion()
 		
 		//공백 추가
@@ -516,30 +552,26 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		//문제 풀이 종료
 		public void stop() {
 			//대화상자 종료
-			dialogObj.dispatchEvent( new WindowEvent(dialogObj, WindowEvent.WINDOW_CLOSING) );
+			try {
+				dialogObj.dispatchEvent( new WindowEvent(dialogObj, WindowEvent.WINDOW_CLOSING) );
+			}
+			catch (Exception e) {}
+			new SolveResult(listAnswer); //결과 화면 그리기
+			solve = null;
 		}
 		
-		private void correct(boolean correct) {
+		private void correct(boolean correct, String answer) {
 			if (flagAnswer) {
 				flagAnswer = false;
 				
+				Question question = listQuestion.get(index);
+				Answer structAnswer = new Answer(question, answer, correct);
+				listAnswer.add(structAnswer);
+				
 				if (notice) { //정답 여부 및 해설 표시
-					if (correct) { //정답
-						
-					}
-					else { //오답
-						
-					}
-					Question question = listQuestion.get(index);
 					dialogObj = new QExplainDlg(frame, question, correct);
 				}
 				else { //정답 여부 및 해설 표시하지 않음
-					if (correct) { //정답
-						
-					}
-					else { //오답
-						
-					}
 					showNextQuestion();
 				}
 			}
@@ -548,7 +580,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			if ( e.getSource().equals(btnQAnswer) ) { //정답
-				correct(true);
+				correct( true, btnQAnswer.getText() );
 			}
 			else if ( e.getSource().equals(btnQSubmit) ) { //정답 제출
 				//공백이면 종료
@@ -557,7 +589,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				}
 				
 				//제출한 답안과 저장된 정답 가공
-				Question question = listQuestion.get(index);
 				String[] aryAnswer = { tfQAnswer.getText(), question.getAnswer() };
 				for (int i=0; i<aryAnswer.length; i++) {
 					aryAnswer[i] = aryAnswer[i].replace(" ", ""); //공백 제거
@@ -570,13 +601,204 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				}
 				
 				//정답 확인
-				correct( aryAnswer[0].equals( aryAnswer[1] ) );
+				correct( aryAnswer[0].equals( aryAnswer[1] ), tfQAnswer.getText() );
 			}
 			else { //선택형 오답
-				correct(false);
+				correct(false, ( (JButton)( e.getSource() ) ).getText() );
 			}
 		}
 	} //SolveQuestion 클래스
+	
+	
+	class SolveResult {
+		private static final ImageIcon imageCorrect = new ImageIcon("images/CorrectAnswer.png");
+		private static final ImageIcon imageWrong = new ImageIcon("images/WrongAnswer.png");
+		
+		private JScrollPane sPnlQ = new JScrollPane();
+		private JPanel pnlBase = new JPanel();
+		private JPanel pnlSouth = new JPanel();
+		private JPanel pnlArcBase = new JPanel();
+		private Arc pnlArc = null;
+		private JLabel lblCorrect = new JLabel("정답 : ", SwingConstants.CENTER);
+		private JLabel lblWrong = new JLabel("오답 : ", SwingConstants.CENTER);
+		private JLabel lblAccuracy = new JLabel("정답률 : ", SwingConstants.CENTER);
+		
+		public SolveResult(ArrayList<Answer> listAnswer) {
+			solve = null;
+			if (listAnswer.size() <= 0) {
+				setMenu("Workbook");
+				return;
+			}
+			
+			setMenu("SolveResult");
+			
+			//정답, 오답 개수 도출
+			int countCorrect = 0;
+			for (Answer k : listAnswer) {
+				if ( k.isCorrect() ) {
+					countCorrect++;
+				}
+			}
+			int countWrong = listAnswer.size() - countCorrect;
+			
+			//버튼 라벨 객체 폰트 설정
+			JLabel[] aryLabel = { lblCorrect, lblWrong, lblAccuracy };
+			for (JLabel lbl : aryLabel) {
+				lbl.setFont( new Font(FONT_NAME, Font.BOLD, 25) );
+			}
+			
+			sPnlQ.setViewportView(pnlBase);
+			pnlBase.setPreferredSize( new Dimension( pnlCenter.getWidth(), 100) );
+			sPnlQ.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+			sPnlQ.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+			sPnlQ.getVerticalScrollBar().setUnitIncrement(20);
+			pnlCenter.add(sPnlQ, BorderLayout.CENTER);
+			
+			pnlBase.setLayout( new BoxLayout(pnlBase, BoxLayout.Y_AXIS) );
+			pnlBase.setBorder( BorderFactory.createEmptyBorder(20, 20, 20, 20) );
+			
+			//정답률 원형 그래프
+			pnlArcBase.setLayout( new GridLayout() );
+			Dimension arcSize = new Dimension(150, 150);
+			pnlArcBase.setPreferredSize(arcSize);
+			pnlArcBase.setMaximumSize(arcSize);
+			pnlArc = new Arc(countCorrect, countWrong);
+			pnlArcBase.add(pnlArc);
+			pnlBase.add(pnlArcBase, BorderLayout.CENTER);
+			addGap(10);
+			
+			//정답, 오답 개수
+			JPanel pnlTemp = new JPanel();
+			pnlTemp.setLayout( new FlowLayout(FlowLayout.CENTER, 30, 0) );
+			pnlTemp.setPreferredSize( new Dimension(0, 40) );
+			pnlTemp.setMaximumSize( new Dimension(10000, 40) );
+			pnlBase.add(pnlTemp);
+			
+			lblCorrect.setText("정답 : " + countCorrect + "개");
+			lblWrong.setText("오답 : " + countWrong + "개");
+			pnlTemp.add(lblCorrect);
+			pnlTemp.add(lblWrong);
+			addGap(10);
+			
+			//정답률
+			pnlTemp = new JPanel();
+			pnlTemp.setLayout( new FlowLayout(FlowLayout.CENTER, 30, 0) );
+			pnlTemp.setPreferredSize( new Dimension(0, 40) );
+			pnlTemp.setMaximumSize( new Dimension(10000, 40) );
+			pnlTemp.add(lblAccuracy);
+			
+			double accuracy = (double)countCorrect / (double)(countCorrect + countWrong) * 1000;
+			lblAccuracy.setText("정답률 : " + (double)Math.round(accuracy) / 10 + "%");
+			pnlBase.add(pnlTemp);
+			addGap(15);
+			
+			repaint();
+			validate();
+			
+			Image imgCorrect = imageCorrect.getImage().getScaledInstance(
+					lblCorrect.getHeight(), lblCorrect.getHeight(), Image.SCALE_SMOOTH);
+			lblCorrect.setIcon( new ImageIcon(imgCorrect) );
+			Image imgWrong = imageWrong.getImage().getScaledInstance(
+					lblWrong.getHeight(), lblWrong.getHeight(), Image.SCALE_SMOOTH);
+			lblWrong.setIcon( new ImageIcon(imgWrong) );
+			
+			repaint();
+			validate();
+			
+			//구분선
+			JPanel pnlBar = new JPanel();
+			pnlBar.setPreferredSize( new Dimension(pnlBase.getWidth(), 0) );
+			pnlBar.setMaximumSize( new Dimension(10000, 2) );
+			pnlBar.setBorder( new MatteBorder(0, 0, 4, 0, COLOR_BORDER) );
+			pnlBase.add(pnlBar);
+			addGap(15);
+			
+			repaint();
+			validate();
+			
+			int height = pnlBase.getHeight();
+			
+			for (int i=0; i<listAnswer.size(); i++) {
+				AnswerPanel lbl = new AnswerPanel( listAnswer.get(i) );
+				pnlBase.add(lbl);
+				height += 70;
+			}
+			
+			repaint();
+			validate();
+			pnlBase.setPreferredSize( new Dimension(pnlCenter.getWidth(), height) );
+			repaint();
+			validate();
+		} //생성자
+		
+		class Arc extends JLabel {
+			private static final long serialVersionUID = 1L;
+			private double accuracy;
+			
+			public Arc(int countCorrect, int countWrong) {
+				accuracy = (double)countCorrect / (double)(countCorrect + countWrong);
+			}
+			
+			@Override
+			public void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				Graphics2D g2 = (Graphics2D) g;
+				g2.setPaint(Color.GREEN);
+				int size = Math.min( pnlArcBase.getWidth(), pnlArcBase.getHeight() );
+				int x = pnlArcBase.getWidth() / 2 - size / 2;
+				int ang = (int)(360 * accuracy);
+				
+		        g2.fillArc(x, 0, size, size, 90, -ang);
+		        g2.setPaint(Color.RED);
+		        g2.fillArc(x, 0, size, size, 90 - ang, -360 + ang);
+			}
+		} //Arc 클래스
+		
+		class AnswerPanel extends JPanel {
+			private static final long serialVersionUID = 1L;
+			JPanel pnlCenter = new JPanel();
+			JLabel lblCorrectImg = new JLabel();
+			JLabel lblQTitle = new JLabel();
+			JLabel lblQAnswer = new JLabel();
+			
+			public AnswerPanel(Answer answer) {
+				this.setPreferredSize( new Dimension(0, 70) );
+				this.setMaximumSize( new Dimension(10000, 70) );
+				this.setBorder( BorderFactory.createEmptyBorder(5, 5, 5, 5) );
+				setVisible(true);
+				
+				setLayout( new BorderLayout(20, 0) );
+				
+				ImageIcon image;
+				if ( answer.isCorrect() ) {
+					image = imageCorrect;
+				}
+				else {
+					image = imageWrong;
+				}
+				Image resizedImg = image.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+				lblCorrectImg.setIcon( new ImageIcon(resizedImg) );
+				add(lblCorrectImg, BorderLayout.WEST);
+				
+				pnlCenter.setLayout( new GridLayout(2, 1, 0, 0) );
+				add(pnlCenter, BorderLayout.CENTER);
+				
+				//문제
+				lblQTitle.setFont( new Font(FONT_NAME, Font.BOLD, 25) );
+				lblQTitle.setText( answer.getQuestion().getTitle() );
+				pnlCenter.add(lblQTitle);
+				
+				//제출한 정답
+				lblQAnswer.setFont( new Font(FONT_NAME, Font.PLAIN, 20) );
+				lblQAnswer.setText( answer.getQuestion().getAnswer() );
+				pnlCenter.add(lblQAnswer);
+			}
+		}
+		
+		private void addGap(int gap) {
+			pnlBase.add( Box.createRigidArea( new Dimension(0, gap) ) );
+		}
+	} //SolveResult 클래스
 	
 	
 	//getter
@@ -722,20 +944,18 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 	*/
 	public void setMenu(String menu, String filePath) {
 		//풀이하고 있던 문제가 있던 경우
-		if (strMenu == "SolveQuestion") {
+		if (solve != null && strMenu == "SolveQuestion") {
 			if ( MessageBox.show(this, "문제 풀이를 종료하시겠습니까?", MessageBox.btnYES_NO,
-					MessageBox.iconQUESTION) == MessageBox.idNO ) {
-				return; //풀이 종료를 원치 않는다면 메뉴 변경 중지
+					MessageBox.iconQUESTION) != MessageBox.idYES ) {
+				return;
 			}
-			System.out.println("문제 풀이 종료");
-			solve.stop();
-			solve = null;
 		}
 		
 		//객체 초기화
 		c.setCursor( new Cursor(Cursor.DEFAULT_CURSOR) );
 		pnlNorthEast.removeAll();
 		pnlCenter.removeAll();
+		setResizable(true);
 		
 		Workbook workbook = null;
 		if ( filePath != null && !filePath.isEmpty() ) {
@@ -763,15 +983,12 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				pnlCenter.add(pnlCenterMain, BorderLayout.CENTER);
 				reloadWb(); //문제집 파일 로드 및 버튼 그리기
 				break;
-			case "Review": //오답 노트 메뉴
-				lblMenuName.setText(" 오답 노트");
-				break;
-			case "History": //기록 메뉴
-				lblMenuName.setText(" 기록");
-				break;
-			case "Setting": //설정 메뉴
-				lblMenuName.setText(" 설정");
-				break;
+//			case "Review": //오답 노트 메뉴
+//				break;
+//			case "History": //기록 메뉴
+//				break;
+//			case "Setting": //설정 메뉴
+//				break;
 			case "Question": //[문제집] - 문제 메뉴
 				lblMenuName.setText( " " + workbook.getName() );
 				pnlNorthEast.add(btnRevert);
@@ -786,8 +1003,18 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				pnlScroll.add(btnAddQuestion);
 				break;
 			case "SolveQuestion": //문제 풀이
-				lblMenuName.setText("문제 풀이");
+				lblMenuName.setText(" 문제 풀이");
 				pnlNorthEast.add(btnRevert);
+				setResizable(false);
+				break;
+			case "SolveResult":
+				lblMenuName.setText(" 풀이 결과");
+				pnlNorthEast.add(btnRevert);
+				setResizable(false);
+				try {
+					solve.stop();
+				}
+				catch (Exception e) {}
 				break;
 		} //switch()
 		
@@ -795,7 +1022,6 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 		c.validate();
 		this.filePathBuffer = filePath;
 		strMenu = menu;
-		System.out.println(menu);
 	} //setMenu()
 	
 	public void setMenu(String menu) {
@@ -821,8 +1047,7 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 			solve.showNextQuestion();
 		}
 		catch (Exception e) {
-			//TODO 문제풀이 종료 및 결과
-			solve = null;
+			setMenu("SolveResult");
 		}
 	}
 	
@@ -851,6 +1076,11 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				}
 				break;
 			case "SolveQuestion":
+				if ( source.equals(btnRevert) ) { //되돌리기
+					setMenu("SolveResult");
+				}
+				break;
+			case "SolveResult":
 				if ( source.equals(btnRevert) ) { //되돌리기
 					setMenu("Workbook");
 				}
