@@ -896,8 +896,9 @@ public class Frame extends JFrame implements ActionListener, MouseListener, KeyL
 				Collections.sort(listWbBtn, new Comparator<WorkbookButton>() {
 		            @Override
 		            public int compare(WorkbookButton btn1, WorkbookButton btn2) {
-		                return Integer.toString( btn1.getWb().getQuestion().size() )
-		                		.compareTo( Integer.toString( btn2.getWb().getQuestion().size() ) );
+		            	Integer size1 = btn1.getWb().getQuestion().size();
+		            	Integer size2 = btn2.getWb().getQuestion().size();
+		                return size1.compareTo(size2);
 		            }
 		        });
 				
